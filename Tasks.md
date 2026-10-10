@@ -58,6 +58,8 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [x] Ejecutar `./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2`: stack `habit-tracker-base` creado (ECR, cluster ECS, 2 roles IAM y usuario `habit-tracker-github-deploy` con 1 llave).
 - [x] Guardar en GitHub (repositorio) los secrets `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY` y las variables `AWS_REGION` y `ECR_REPOSITORY`.
 - [x] Confirmar que el SCP permite crear usuario y roles IAM.
+- [x] Limitar el entorno `production` a la rama `main`, rotar la llave de acceso y mover los secrets al entorno (los del repositorio se borraron).
+- [x] Cambiar `deploy.yml` a solo manual (`workflow_dispatch`) para no crear recursos de pago por accidente.
 
 ### Verificación del frontend
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
@@ -67,13 +69,12 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 
 ### Requiere tu confirmación (crea recursos externos o publica)
 - [ ] Comprobar que el SCP permita crear el servicio de ECS Express Mode y los roles vinculados de ECS y ELB (solo se sabe al crearlo).
-- [ ] Crear el entorno `production` en GitHub (limitado a `main`) y mover ahí los secrets de AWS.
 - [ ] Primer despliegue (merge a `main` o `workflow_dispatch`) y verificar `/health` en el móvil.
 - [ ] Ensayar la creación del servicio con tiempo: las plantillas solo pasaron `cfn-lint`.
 - [ ] Verificar `Cpu`/`Memory`, comportamiento de actualización y permisos del rol de despliegue en `AWS::ECS::ExpressGatewayService`.
 
 ### GitHub
-- [ ] Decidir qué hacer con `deploy.yml`: falla en rojo en cada push a `main` mientras no existan `AWS_REGION` ni los secrets (hacerlo solo manual con `workflow_dispatch` hasta entonces).
+- [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
 - [ ] Decidir si desactivar el workflow "Auto-close issue" del proyecto (hoy cierra solos los issues al pasar a Done) para cerrarlos con `Closes #N` en los PRs.
 - [ ] Decidir si se quita la regla de aprobación o se invita a un segundo colaborador (hoy el merge exige bypass de administrador).
 

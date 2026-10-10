@@ -1,8 +1,10 @@
 name: Deploy
 
+# Solo manual: cada despliegue crea recursos que cobran por hora (Fargate y balanceador).
+# Para volver al despliegue automático al hacer merge, añade de nuevo:
+#   push:
+#     branches: [main]
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
