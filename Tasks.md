@@ -92,6 +92,11 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Borrar el servicio con `./scripts/cleanup-aws.sh service us-east-2` y comprobar en solo lectura: queda solo `habit-tracker-base`, sin servicios, tareas, balanceadores ni target groups.
 - No verificado: si hubo caída del servicio durante la actualización (no se sondeó mientras duraba).
 
+### Kickoff y ADR (2026-10-10)
+- [x] Actualizar `habit-tracker-sdlc-kickoff.md` en local: nota de «Revisión 8», región `us-east-2`, restricciones del SCP y `aws configure` en lugar de `aws configure sso` y `aws sso login`. Las plantillas incrustadas y lo de Supabase se dejan como contenido inicial (la nota avisa del desfase).
+- [x] Decidir que el kickoff **no se versiona** (queda solo local, como dice `CLAUDE.md`; `prompt-*.md` entra en la misma regla).
+- [x] ADR-005: quitar la referencia a «la sección de riesgos del kickoff» y apuntar a `pipeline-cicd.md` y al runbook, que sí están en el repo.
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
@@ -119,8 +124,6 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Revisar Billing y Budgets al día siguiente.
 
 ### Documentación por ajustar
-- [ ] Actualizar `habit-tracker-sdlc-kickoff.md`: región us-east-2, restricciones del SCP y `aws configure` en lugar de `aws configure sso` (sigue diciendo us-east-1 y SSO).
-- [ ] Decidir si se versionan `habit-tracker-sdlc-kickoff.md` y `prompt-init.md` (hoy sin versionar).
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
 ### Día 2: migración a PostgreSQL (ADR-004, HU-08)
