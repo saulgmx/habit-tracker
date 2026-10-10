@@ -127,16 +127,20 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
 ### Día 2: migración a PostgreSQL (ADR-004, HU-08)
+Fases A y B integradas (PR #28 y #29). Fase C en curso (2026-10-10): la base y el servicio están **creados y cobrando por hora** (~0.06 USD/h, estimación); al terminar, `./scripts/cleanup-aws.sh db`.
 - [ ] Confirmar en la consola («Explore AWS») que usar RDS suma el crédito adicional.
-- [ ] Crear la instancia RDS for PostgreSQL (`db.t4g.micro`, Single-AZ, `us-east-2`) con CloudFormation en `infra/aws/` y definir cómo se conecta el servicio (VPC y grupo de seguridad). Pedir permiso antes: crea recursos con costo por hora.
-- [ ] Guardar la cadena de conexión en Secrets Manager o Parameter Store.
-- [ ] Añadir `docker-compose.yml` en la raíz (referencia en `docs/05-despliegue/docker-compose.dia2.yml`).
-- [ ] Cambiar el proveedor a Npgsql y regenerar las migraciones.
-- [ ] CI: service container de Postgres.
-- [ ] CD: paso de migraciones y secretos de conexión (Secrets Manager o Parameter Store).
-- [ ] Añadir la instancia RDS a `scripts/cleanup-aws.sh` (detenerla o borrarla al terminar el demo).
-- [ ] `/health` que compruebe la base de datos.
-- [ ] Actualizar README y runbook, y pasar ADR-004 a "Aceptada".
+- [x] Crear la instancia RDS for PostgreSQL con CloudFormation (`infra/aws/db.yaml`, `./scripts/setup-db.sh`): PostgreSQL 16.13, `db.t4g.micro`, Single-AZ, 20 GiB gp3 cifrado, privada, el 5432 solo desde el grupo de seguridad de las tareas. Creada sin errores; el SCP no la bloqueó.
+- [x] Conectar el servicio: Express Mode acepta un grupo de seguridad propio como adicional (`NetworkConfiguration`), y la tarea lo recibe junto al suyo.
+- [x] Guardar las credenciales: RDS administra la contraseña en Secrets Manager (`ManageMasterUserPassword`) y la tarea recibe `Database__User` y `Database__Password` como secretos de ECS; el host, puerto y nombre van como variables.
+- [x] `docker-compose.yml` en la raíz, con `db` y `api` (PR #28).
+- [x] Proveedor Npgsql y migración `InitialCreate` regenerada (PR #28).
+- [x] CI: service container de Postgres; 28 pruebas contra Postgres real (PR #28).
+- [x] Migraciones: se aplican con `Migrate()` al arrancar la API, no como paso aparte del CD (RDS es privada y GitHub Actions no llega a ella). Verificado en el despliegue contra RDS.
+- [x] Añadir la base a `scripts/cleanup-aws.sh` (modo `db`; `service` avisa de que la base sigue cobrando).
+- [x] `/health` que compruebe la base de datos (200, o 503 si no responde).
+- [x] Primer despliegue contra RDS (run `38091875241`, verde en 6 min 19 s, sin permisos faltantes): `/health` con `"database":"ok"`, `/api/habits` con los datos sembrados y `/`, `manifest.json` y `sw.js` con 200.
+- [ ] Probar que los datos sobreviven a un redespliegue: hábito marcador «Persistencia RDS» (id 5, con check-in de hoy) creado antes de redesplegar sobre la tarea `14e289d7`, definición `:6`, imagen `fc10a5a`. Falta redesplegar con un SHA nuevo y comprobar que sigue ahí.
+- [ ] Actualizar README, runbook, costos y pipeline, y pasar ADR-004 a "Aceptada" (fase D).
 
 ### Opcional
 - [ ] Pasar el servicio a ARM64 (Graviton) en Express Mode: hasta 40 % mejor relación precio-rendimiento según AWS. Hoy se usa x86_64 (valor por defecto) y el ahorro con 0.25 vCPU y 0.5 GiB sería de centavos.
