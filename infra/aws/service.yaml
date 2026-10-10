@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Habit Tracker - servicio en ECS Express Mode (Fargate con balanceador HTTPS
+  gestionado). Requiere el stack base.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: habit-tracker
+    AllowedPattern: '^[a-z][a-z0-9-]{2,30}$'
+    Description: Debe coincidir con el ProjectName del stack base.
+  ImageUri:
+    Type: String
+    Description: URI de la imagen en ECR, por ejemplo 123456789012.dkr.ecr.us-east-2.amazonaws.com/habit-tracker:<sha>.
+  ContainerPort:
+    Type: Number
+    Default: 8080
+    Description: Puerto de la API (el valor por defecto de Express Mode es 80).
+  HealthCheckPath:
+    Type: String
+    Default: /health
+    Description: Ruta de health check (la API responde 200 en /health).
+  Cpu:
+    Type: String
+    Default: '256'
+    AllowedValues: ['256', '512', '1024']
+    Description: Unidades de CPU por tarea (256 = 0.25 vCPU). Verificar el formato aceptado por Express Mode.
+  Memory:
+    Type: String
+    Default: '512'
+    AllowedValues: ['512', '1024', '2048']
+    Description: Memoria en MiB por tarea. Debe ser compatible con la CPU elegida en Fargate.
+  MinTaskCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 5
+  MaxTaskCount:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 5
+    Description: Tope de tareas (acota el costo máximo de cómputo).
+
+Resources:
+  Service:
+    Type: AWS::ECS::ExpressGatewayService
+    Properties:
+      ServiceName: !Ref ProjectName
+      Cluster: !ImportValue
+        Fn::Sub: '${ProjectName}-base-ClusterName'
+      ExecutionRoleArn: !ImportValue
+        Fn::Sub: '${ProjectName}-base-TaskExecutionRoleArn'
+      InfrastructureRoleArn: !ImportValue
+        Fn::Sub: '${ProjectName}-base-InfrastructureRoleArn'
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      HealthCheckPath: !Ref HealthCheckPath
+      PrimaryContainer:
+        Image: !Ref ImageUri
+        ContainerPort: !Ref ContainerPort
+        Environment:
+          - Name: ASPNETCORE_ENVIRONMENT
+            Value: Production
+      ScalingTarget:
+        MinTaskCount: !Ref MinTaskCount
+        MaxTaskCount: !Ref MaxTaskCount
+        AutoScalingMetric: AVERAGE_CPU
+        AutoScalingTargetValue: 60
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+Outputs:
+  Endpoint:
+    Description: Endpoint del servicio (puede incluir o no el esquema https://).
+    Value: !GetAtt Service.Endpoint
+  ServiceArn:
+    Value: !GetAtt Service.ServiceArn

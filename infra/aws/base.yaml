@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Habit Tracker - base: repositorio ECR, cluster ECS, roles IAM y usuario IAM
+  de despliegue para GitHub Actions (las llaves de acceso las crea setup-aws.sh).
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: habit-tracker
+    AllowedPattern: '^[a-z][a-z0-9-]{2,30}$'
+    Description: Prefijo en minúsculas para los nombres de los recursos.
+  ImagesToKeep:
+    Type: Number
+    Default: 10
+    MinValue: 1
+    MaxValue: 50
+    Description: Cantidad de imágenes que conserva ECR (controla el costo de almacenamiento).
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ProjectName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {"rules":[{"rulePriority":1,"description":"Conservar las ultimas ${ImagesToKeep} imagenes","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":${ImagesToKeep}},"action":{"type":"expire"}}]}
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ProjectName
+
+  # Rol que usan las tareas para descargar la imagen y escribir logs.
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # Rol que ECS Express Mode usa para crear y gestionar el balanceador, la red y el autoescalado.
+  InfrastructureRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAccessInfrastructureForECSExpressServices
+            Effect: Allow
+            Principal:
+              Service: ecs.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices
+
+  # Usuario de despliegue para GitHub Actions. Las llaves de acceso NO se definen aqui
+  # (AWS::IAM::AccessKey dejaria el secreto en las salidas de CloudFormation): las crea
+  # scripts/setup-aws.sh y las guarda directamente como secrets de GitHub.
+  GitHubDeployUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub '${ProjectName}-github-deploy'
+      Policies:
+        - PolicyName: deploy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: EcrLogin
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: EcrPush
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:DescribeImages
+                Resource: !GetAtt Repository.Arn
+              # Acciones de ECS Express Mode (conjunto de la acción oficial de GitHub; sin verificar).
+              # Se pueden acotar más una vez que el flujo funcione.
+              - Sid: EcsExpress
+                Effect: Allow
+                Action:
+                  - ecs:DescribeClusters
+                  - ecs:RegisterTaskDefinition
+                  - ecs:CreateExpressGatewayService
+                  - ecs:UpdateExpressGatewayService
+                  - ecs:DeleteExpressGatewayService
+                  - ecs:DescribeExpressGatewayService
+                  - ecs:DescribeServices
+                  - ecs:ListServiceDeployments
+                  - ecs:DescribeServiceDeployments
+                  - ecs:TagResource
+                  - ecs:UntagResource
+                Resource: '*'
+              - Sid: PassRolesToEcs
+                Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt TaskExecutionRole.Arn
+                  - !GetAtt InfrastructureRole.Arn
+                Condition:
+                  StringEquals:
+                    'iam:PassedToService': ecs.amazonaws.com
+              - Sid: ServiceLinkedRoles
+                Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    'iam:AWSServiceName':
+                      - ecs.amazonaws.com
+                      - elasticloadbalancing.amazonaws.com
+              - Sid: ServiceStack
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:GetTemplate
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                Resource: !Sub 'arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ProjectName}-service/*'
+              - Sid: TemplateChecks
+                Effect: Allow
+                Action:
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ValidateTemplate
+                Resource: '*'
+
+Outputs:
+  RepositoryName:
+    Value: !Ref Repository
+  RepositoryUri:
+    Value: !GetAtt Repository.RepositoryUri
+    Export:
+      Name: !Sub '${ProjectName}-base-RepositoryUri'
+  ClusterName:
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub '${ProjectName}-base-ClusterName'
+  TaskExecutionRoleArn:
+    Value: !GetAtt TaskExecutionRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-base-TaskExecutionRoleArn'
+  InfrastructureRoleArn:
+    Value: !GetAtt InfrastructureRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-base-InfrastructureRoleArn'
+  GitHubDeployUserName:
+    Description: Usuario IAM para el que setup-aws.sh crea las llaves de acceso.
+    Value: !Ref GitHubDeployUser
