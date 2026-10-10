@@ -1,6 +1,6 @@
 namespace HabitTracker.Api.Data;
 
-/// <summary>Datos de ejemplo: SQLite en el contenedor es efímero, así que se siembran al arrancar.</summary>
+/// <summary>Datos de ejemplo: se siembran al arrancar solo si la base está vacía.</summary>
 public static class SeedData
 {
     public static void Apply(AppDbContext db, DateOnly today)

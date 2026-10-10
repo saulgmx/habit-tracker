@@ -1,0 +1,32 @@
+# Solo para desarrollo local y pruebas (credenciales de ejemplo, no usar en la nube).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: habits
+      POSTGRES_PASSWORD: habits
+      POSTGRES_DB: habits
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habits"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # La API en contenedor: `docker compose up --build` levanta todo en http://localhost:8080.
+  # Para desarrollar con `dotnet run`, basta `docker compose up -d --wait db`.
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=habits;Username=habits;Password=habits"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:

@@ -10,10 +10,9 @@ RUN dotnet publish src/HabitTracker.Api/HabitTracker.Api.csproj -c Release -o /a
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app ./
-# SQLite vive en /data (efímero en el contenedor: se siembra al arrancar).
-RUN mkdir /data && chown app:app /data
+# La conexión a PostgreSQL se pasa por variables de entorno (ConnectionStrings__Default,
+# o Database__Host, Database__Name, Database__User y Database__Password).
 USER app
-ENV ASPNETCORE_URLS=http://+:8080 \
-    ConnectionStrings__Default="Data Source=/data/habits.db"
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "HabitTracker.Api.dll"]

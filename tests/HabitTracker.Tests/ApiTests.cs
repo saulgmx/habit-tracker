@@ -3,34 +3,48 @@ using System.Net.Http.Json;
 using HabitTracker.Api.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace HabitTracker.Tests;
 
+/// <summary>
+/// Levanta la API contra una base PostgreSQL propia de la ejecución (se crea y se borra).
+/// El servidor sale de <c>TEST_POSTGRES</c> (en local, el de <c>docker compose up -d db</c>).
+/// </summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private const string DefaultServer = "Host=localhost;Port=5432;Database=postgres;Username=habits;Password=habits";
+
+    private readonly string _admin = Environment.GetEnvironmentVariable("TEST_POSTGRES") ?? DefaultServer;
+    private readonly string _database = $"habits_test_{Guid.NewGuid():N}";
+
+    public ApiFactory()
+    {
+        using var connection = new NpgsqlConnection(_admin);
+        connection.Open();
+        using var command = new NpgsqlCommand($"CREATE DATABASE \"{_database}\"", connection);
+        command.ExecuteNonQuery();
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        _connection.Open();
+        var connectionString = new NpgsqlConnectionStringBuilder(_admin) { Database = _database }.ConnectionString;
+        builder.UseSetting("ConnectionStrings:Default", connectionString);
         builder.UseSetting("Seed:Enabled", "false");
-        builder.ConfigureServices(services =>
-        {
-            var existing = services.Where(d =>
-                d.ServiceType == typeof(DbContextOptions<AppDbContext>) ||
-                d.ServiceType == typeof(DbContextOptions)).ToList();
-            foreach (var d in existing) services.Remove(d);
-            services.AddDbContext<AppDbContext>(o => o.UseSqlite(_connection));
-        });
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) _connection.Dispose();
+        if (!disposing) return;
+
+        NpgsqlConnection.ClearAllPools();
+        using var connection = new NpgsqlConnection(_admin);
+        connection.Open();
+        using var command = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{_database}\" WITH (FORCE)", connection);
+        command.ExecuteNonQuery();
     }
 }
 
@@ -55,6 +69,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var response = await _client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"database\":\"ok\"", await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
