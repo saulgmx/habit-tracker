@@ -85,12 +85,21 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Corregir y comprobar el CI en verde (23 de 23).
 - [x] Dejar la rama con el bug puesto y el CI en rojo (`git reset --hard 645dea9` y `push --force-with-lease`). Para el demo: abrir el CI del PR #22, mostrar la prueba que falla, corregir `StreakCalculator.cs` (`var cursor = set.Contains(today) ? today : today.AddDays(-1);`) y empujar para ver el verde. La rama no se integra en `main`.
 
+### Segundo despliegue: actualización de imagen (2026-10-10)
+- [x] Crear el servicio con `deploy.yml` sobre `79cd55d` (run `38074116647`): verde en 7 min 6 s; `/health`, `/api/habits`, `/`, `manifest.json` y `sw.js` dieron 200.
+- [x] Integrar el PR #24 para tener un SHA nuevo en `main` (`33b709b`). El workflow etiqueta la imagen con el SHA: con el mismo commit el changeset sería vacío y no probaría la actualización.
+- [x] Lanzar `deploy.yml` otra vez (run `38074956407`): verde en 9 min 58 s. El stack pasó de `CREATE_COMPLETE` a `UPDATE_COMPLETE` (el recurso `Service` tardó unos 9 min), sin errores ni rollback y sin permisos que faltaran. La tarea en ejecución usa la imagen `33b709b` (definición de tarea `habit-tracker-habit-tracker:5`) y `/health`, `/api/habits` y `/` dieron 200.
+- [x] Borrar el servicio con `./scripts/cleanup-aws.sh service us-east-2` y comprobar en solo lectura: queda solo `habit-tracker-base`, sin servicios, tareas, balanceadores ni target groups.
+- No verificado: si hubo caída del servicio durante la actualización (no se sondeó mientras duraba).
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
 - [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
-- [ ] Ensayar un segundo despliegue sobre un servicio existente (actualización de imagen). En curso: el cuarto despliegue (creación, run `38074116647` sobre `79cd55d`) terminó en verde en 7 min 6 s y `/health`, `/api/habits`, `/`, `manifest.json` y `sw.js` dieron 200. Falta lanzar el despliegue sobre un SHA nuevo de `main` para confirmar `UpdateExpressGatewayService` y sus permisos. El servicio sigue creado y cobrando: borrarlo al terminar.
-- [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona: 3 grupos de logs (`/aws/ecs/habit-tracker/habit-tracker-5c44`, `-d4e5` y `-e908`) y las revisiones 1, 2 y 3 de la definición de tarea `habit-tracker-habit-tracker`. Sin costo relevante. Valorar añadir este borrado a `cleanup-aws.sh`.
+- [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona. Decidido dejarlos por ahora (sin costo relevante):
+  - 4 grupos de logs `/aws/ecs/habit-tracker/habit-tracker-` con sufijo `5c44`, `97b8`, `d4e5` y `e908`: 0 bytes almacenados y sin expiración (consultado el 2026-10-10). Cada despliegue crea uno nuevo.
+  - Definiciones de tarea `habit-tracker-habit-tracker`: `ListTaskDefinitions` ya no devuelve ninguna activa; falta comprobar con `status=INACTIVE` si quedan revisiones.
+  - Valorar añadir este borrado a `cleanup-aws.sh`.
 
 ### GitHub
 - [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
