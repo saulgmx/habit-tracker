@@ -52,6 +52,13 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [x] Reemplazar `<usuario>` en el badge y el ejemplo de `setup-aws.sh` del `README.md`.
 - [x] Cambiar `aws sso login` por `aws configure` en README y runbook (la cuenta usa un usuario IAM, no IAM Identity Center).
 
+### AWS
+- [x] Crear el presupuesto `habit-tracker-5usd` ($5 al mes, alertas por correo al 50, 90 y 100 %).
+- [x] Verificar en solo lectura que ECS, ECR, CloudFormation, ELB, EC2, Logs e IAM responden en us-east-2.
+- [x] Ejecutar `./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2`: stack `habit-tracker-base` creado (ECR, cluster ECS, 2 roles IAM y usuario `habit-tracker-github-deploy` con 1 llave).
+- [x] Guardar en GitHub (repositorio) los secrets `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY` y las variables `AWS_REGION` y `ECR_REPOSITORY`.
+- [x] Confirmar que el SCP permite crear usuario y roles IAM.
+
 ### Verificación del frontend
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
 - [x] Corregir la fecha ("9 De Octubre" a "9 de Octubre") con `::first-letter`.
@@ -59,9 +66,7 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
-- [ ] Crear el presupuesto de $5 en AWS Budgets (alertas al 50, 90 y 100 %).
-- [ ] Ejecutar `./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2` (crea stack base, usuario IAM, llaves y secrets de GitHub).
-- [ ] Comprobar que el SCP permita crear usuarios IAM, roles y ECS Express Mode (no verificado).
+- [ ] Comprobar que el SCP permita crear el servicio de ECS Express Mode y los roles vinculados de ECS y ELB (solo se sabe al crearlo).
 - [ ] Crear el entorno `production` en GitHub (limitado a `main`) y mover ahí los secrets de AWS.
 - [ ] Primer despliegue (merge a `main` o `workflow_dispatch`) y verificar `/health` en el móvil.
 - [ ] Ensayar la creación del servicio con tiempo: las plantillas solo pasaron `cfn-lint`.
@@ -101,6 +106,11 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [ ] Actualizar README y runbook, y pasar ADR-004 a "Aceptada".
 
 ### Opcional
+- [ ] Pasar el servicio a ARM64 (Graviton) en Express Mode: hasta 40 % mejor relación precio-rendimiento según AWS. Hoy se usa x86_64 (valor por defecto) y el ahorro con 0.25 vCPU y 0.5 GiB sería de centavos.
+  - Bloqueo: la CLI de ECS ya tiene `--cpu-architecture` (`X86_64` o `ARM64`), pero el esquema de `AWS::ECS::ExpressGatewayService` en CloudFormation (consultado el 2026-10-09 en us-east-2) no tiene `CpuArchitecture`. Volver a consultarlo con `aws cloudformation describe-type --region us-east-2 --type RESOURCE --type-name AWS::ECS::ExpressGatewayService`.
+  - Cuando exista la propiedad: añadir `CpuArchitecture: ARM64` en `infra/aws/service.yaml`.
+  - Construir la imagen para `linux/arm64` en `deploy.yml` (runner `ubuntu-24.04-arm` o buildx con QEMU). Si no coincide con la arquitectura del servicio, el contenedor falla al arrancar con *exec format error*.
+  - Si CloudFormation tarda, crear el servicio con la CLI cambiaría ADR-005 y reabre la deriva entre plantilla y servicio: no recomendado antes del demo.
 - [ ] Pruebas E2E de la UI con Playwright para .NET (`Microsoft.Playwright`) en `tests/HabitTracker.Tests`, sin añadir Node. Hacerlo después del demo.
   - Job aparte y no obligatorio en `ci.yml`, para que no bloquee el check `ci` que protege `main`.
   - 3 o 4 pruebas de humo: cargar la lista, marcar un hábito, crear uno y comprobar que el service worker se registra.
