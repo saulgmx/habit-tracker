@@ -2,7 +2,7 @@
 
 Aplicación web progresiva (PWA) para crear hábitos, marcarlos cada día y ver tus rachas. Proyecto de ejemplo para demostrar el SDLC y CI/CD con GitHub y AWS.
 
-![CI](https://github.com/<usuario>/habit-tracker/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/saulgmx/habit-tracker/actions/workflows/ci.yml/badge.svg)
 
 ## Qué hace
 
@@ -36,8 +36,9 @@ docker run -p 8080:8080 habit-tracker
 ## Infraestructura (AWS)
 
 ```bash
-aws sso login
-./scripts/setup-aws.sh <usuario>/<repo> us-east-2   # una sola vez: ECR, cluster, roles, usuario IAM y secrets de GitHub
+aws configure                                          # usuario IAM (esta cuenta no usa IAM Identity Center)
+aws sts get-caller-identity
+./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2   # una sola vez: ECR, cluster, roles, usuario IAM y secrets de GitHub
 # El primer merge a main (o ejecutar el workflow a mano) crea el servicio.
 ./scripts/cleanup-aws.sh service                    # al terminar: borrar el servicio
 ```

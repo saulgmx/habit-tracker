@@ -1,8 +1,8 @@
 # Runbook
 
 ## Preparar el entorno (una sola vez)
-1. Entrar a la consola con el usuario raíz solo para crear un usuario administrador (IAM Identity Center o IAM) y activar MFA; trabajar después con ese usuario.
-2. `aws sso login` y `aws sts get-caller-identity` para confirmar la cuenta.
+1. Entrar a la consola con el usuario raíz solo para crear un usuario administrador (IAM; esta cuenta no usa IAM Identity Center) y activar MFA; trabajar después con ese usuario.
+2. `aws configure` con las llaves del usuario IAM y `aws sts get-caller-identity` para confirmar la cuenta.
 3. Crear un presupuesto de $5 en AWS Budgets (alertas al 50, 90 y 100 %).
 4. Verificar la VPC predeterminada: `aws ec2 describe-vpcs --filters Name=isDefault,Values=true`.
 5. Confirmar en la consola qué servicios cubre el plan Free (ECS/Fargate, balanceador, ECR) y que Express Mode está disponible en la región.
