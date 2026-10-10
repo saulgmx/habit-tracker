@@ -1,6 +1,6 @@
 # Tasks
 
-Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permitida por el SCP de la cuenta).
+Estado del proyecto al 2026-10-10. Región de AWS: **us-east-2** (única permitida por el SCP de la cuenta).
 
 ## Hecho
 
@@ -79,6 +79,12 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
 - [x] Corregir la fecha ("9 De Octubre" a "9 de Octubre") con `::first-letter`.
 
+### Ensayo del bug del demo (2026-10-10)
+- [x] Crear la rama `demo/bug-racha` con el bug intencional en `StreakCalculator` (commit `645dea9`): `Current` empieza siempre en hoy, así que rompe el caso 4 del plan de pruebas (ayer y anteayer sin hoy dan 0 en vez de 2).
+- [x] Abrir el PR #22 en borrador («NO integrar») y comprobar el CI en rojo: falla `Current_AyerYAnteayerSinHoy_SigueViva`, 22 de 23 pasan.
+- [x] Corregir y comprobar el CI en verde (23 de 23).
+- [x] Dejar la rama con el bug puesto y el CI en rojo (`git reset --hard 645dea9` y `push --force-with-lease`). Para el demo: abrir el CI del PR #22, mostrar la prueba que falla, corregir `StreakCalculator.cs` (`var cursor = set.Contains(today) ? today : today.AddDays(-1);`) y empujar para ver el verde. La rama no se integra en `main`.
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
@@ -92,7 +98,6 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Decidir si se quita la regla de aprobación o se invita a un segundo colaborador (hoy el merge exige bypass de administrador).
 
 ### Preparación del demo
-- [ ] Crear la rama `demo/bug-racha` con el bug intencional en `StreakCalculator`.
 - [ ] Grabar captura o video de respaldo (plan B).
 - [ ] Abrir la app 5 minutos antes del demo.
 - [ ] Actualizar `CHANGELOG.md` al cerrar cada iteración (v0.1.0, v0.2.0, v0.3.0).
