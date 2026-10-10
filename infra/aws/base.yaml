@@ -60,17 +60,27 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices
-      # La politica administrada no incluye este permiso y la creacion del balanceador falla
-      # con AccessDenied (CloudTrail: ec2:DescribeAccountAttributes denegado al rol).
+      # Permisos que la politica administrada no incluye y que CloudTrail registro como
+      # denegados al rol ("no identity-based policy allows"). Sin ec2:DescribeAccountAttributes
+      # la creacion del balanceador falla con AccessDenied.
       Policies:
         - PolicyName: express-extra
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: DescribeAccountAttributes
+              - Sid: Ec2Describe
                 Effect: Allow
-                Action: ec2:DescribeAccountAttributes
+                Action:
+                  - ec2:DescribeAccountAttributes
+                  - ec2:DescribeInternetGateways
+                  - ec2:GetSecurityGroupsForVpc
                 Resource: '*'
+              - Sid: EcsServiceOperations
+                Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                Resource: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:service/${ProjectName}/*'
 
   # Usuario de despliegue para GitHub Actions. Las llaves de acceso NO se definen aqui
   # (AWS::IAM::AccessKey dejaria el secreto en las salidas de CloudFormation): las crea
@@ -112,6 +122,8 @@ Resources:
                   - ecs:DeleteExpressGatewayService
                   - ecs:DescribeExpressGatewayService
                   - ecs:DescribeServices
+                  - ecs:DescribeServiceRevisions
+                  - ecs:DescribeTaskDefinition
                   - ecs:ListServiceDeployments
                   - ecs:DescribeServiceDeployments
                   - ecs:TagResource
