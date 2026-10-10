@@ -18,7 +18,7 @@ Necesita PostgreSQL (ADR-004). En local se levanta con Docker:
 ```bash
 docker compose up -d --wait db                       # PostgreSQL en localhost:5432 (credenciales de ejemplo)
 dotnet run --project src/HabitTracker.Api            # migra y siembra datos al arrancar
-# abrir http://localhost:5000
+# abrir http://localhost:5050
 ```
 
 Para correr todo en contenedores: `docker compose up --build` y abrir http://localhost:8080.

@@ -4,7 +4,7 @@ PWA para crear hábitos y ver rachas. Proyecto de demostración del SDLC y CI/CD
 Estado y pendientes en `Tasks.md`; documentación por fase del SDLC en `docs/` (ADRs en `docs/decisiones/`).
 
 ## Comandos
-- Correr: `docker compose up -d --wait db` y `dotnet run --project src/HabitTracker.Api` → http://localhost:5000 (migra y siembra datos al arrancar).
+- Correr: `docker compose up -d --wait db` y `dotnet run --project src/HabitTracker.Api` → http://localhost:5050 (migra y siembra datos al arrancar).
 - Pruebas: `docker compose up -d --wait db` y `dotnet test` (unitarias de rachas e integración con una base PostgreSQL por ejecución; el servidor sale de `TEST_POSTGRES`).
 - Antes de un PR: `dotnet format --verify-no-changes`, `dotnet build -c Release`, `dotnet test` y `cfn-lint infra/aws/*.yaml`.
 - Contenedor: `docker compose up --build` → http://localhost:8080 (la imagen sola necesita `ConnectionStrings__Default`).

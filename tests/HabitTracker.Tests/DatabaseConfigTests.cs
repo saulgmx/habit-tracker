@@ -9,10 +9,27 @@ public class DatabaseConfigTests
         new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
     [Fact]
-    public void ConCadenaCompleta_LaUsaTalCual()
+    public void ConCadenaCompleta_ConservaSusValores()
     {
-        var config = Config(new() { ["ConnectionStrings:Default"] = "Host=x;Database=y" });
-        Assert.Equal("Host=x;Database=y", DatabaseConfig.GetConnectionString(config));
+        var config = Config(new() { ["ConnectionStrings:Default"] = "Host=x;Database=y;Username=u" });
+
+        var result = DatabaseConfig.GetConnectionString(config);
+
+        Assert.Contains("Host=x", result);
+        Assert.Contains("Database=y", result);
+        Assert.Contains("Username=u", result);
+    }
+
+    [Theory]
+    [InlineData("conCadenaCompleta")]
+    [InlineData("conPartes")]
+    public void SiempreDesactivaElCifradoGss(string origen)
+    {
+        var config = origen == "conCadenaCompleta"
+            ? Config(new() { ["ConnectionStrings:Default"] = "Host=x;Database=y" })
+            : Config(new() { ["Database:Host"] = "x" });
+
+        Assert.Contains("GSS Encryption Mode=Disable", DatabaseConfig.GetConnectionString(config));
     }
 
     [Fact]
