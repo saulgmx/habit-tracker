@@ -1,0 +1,33 @@
+:root {
+  --bg: #f8fafc; --card: #fff; --text: #0f172a; --muted: #64748b;
+  --accent: #0f766e; --accent-soft: #ccfbf1; --danger: #b91c1c; --line: #e2e8f0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 18px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(96px + env(safe-area-inset-bottom));
+}
+header { padding: 24px 0 8px; }
+h1 { margin: 0; font-size: 2rem; }
+#today { margin: 4px 0 0; color: var(--muted); text-transform: capitalize; }
+ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+li { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.check { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--accent); background: transparent; color: #fff; font-size: 1.8rem; cursor: pointer; }
+.check[aria-pressed="true"] { background: var(--accent); }
+.info strong { display: block; font-size: 1.1rem; overflow-wrap: anywhere; }
+.streak { color: var(--muted); font-size: .9rem; }
+.week { display: flex; gap: 4px; margin-top: 6px; }
+.week span { width: 14px; height: 14px; border-radius: 4px; background: var(--line); }
+.week span.on { background: var(--accent); }
+.del { background: none; border: 0; color: var(--muted); font-size: 1.3rem; padding: 8px; cursor: pointer; }
+#add { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 2.2rem; box-shadow: 0 6px 18px rgb(0 0 0 / .25); cursor: pointer; }
+dialog { border: 0; border-radius: 16px; padding: 20px; width: min(92vw, 380px); }
+dialog::backdrop { background: rgb(15 23 42 / .5); }
+dialog h2 { margin: 0 0 12px; }
+input { width: 100%; font: inherit; padding: 12px; border: 2px solid var(--line); border-radius: 10px; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.actions button { font: inherit; padding: 12px 18px; border-radius: 10px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+.actions .secondary { background: var(--line); color: var(--text); }
+#empty, #error { text-align: center; color: var(--muted); }
+#error { color: var(--danger); }
