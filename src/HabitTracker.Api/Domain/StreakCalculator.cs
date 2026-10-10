@@ -10,7 +10,7 @@ public static class StreakCalculator
     public static int Current(IEnumerable<DateOnly> dates, DateOnly today)
     {
         var set = new HashSet<DateOnly>(dates);
-        var cursor = set.Contains(today) ? today : today.AddDays(-1);
+        var cursor = today;
 
         var streak = 0;
         while (set.Contains(cursor))
