@@ -101,10 +101,6 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 
 ### Requiere tu confirmación (crea recursos externos o publica)
 - [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
-- [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona. Decidido dejarlos por ahora (sin costo relevante):
-  - 4 grupos de logs `/aws/ecs/habit-tracker/habit-tracker-` con sufijo `5c44`, `97b8`, `d4e5` y `e908`: 0 bytes almacenados y sin expiración (consultado el 2026-10-10). Cada despliegue crea uno nuevo.
-  - Definiciones de tarea `habit-tracker-habit-tracker`: siguen las revisiones 1 a 5 en estado `ACTIVE` (consultado el 2026-10-10 con el nombre exacto de la familia; con el prefijo `habit-tracker` el listado salió vacío, no se sabe por qué). Para borrarlas hay que darlas de baja (`deregister-task-definition`, pasan a `INACTIVE`) y después eliminarlas (`delete-task-definitions`). Sin costo.
-  - Valorar añadir este borrado a `cleanup-aws.sh`.
 
 ### GitHub
 - [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
@@ -121,6 +117,10 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] `./scripts/cleanup-aws.sh service` (detiene Fargate y el balanceador).
 - [ ] `./scripts/cleanup-aws.sh all` si ya no se necesita, y borrar los secrets de AWS en GitHub.
 - [ ] Revisar en la consola que no queden balanceadores, servicios ECS, grupos de logs ni imágenes.
+- [ ] Borrar los restos de los despliegues que CloudFormation no gestiona. Decidido (2026-10-10): se dejan hasta terminar el demo y se borran entonces, juntos; sin costo relevante.
+  - Grupos de logs `/aws/ecs/habit-tracker/habit-tracker-` con sufijo `5c44`, `97b8`, `d4e5` y `e908` (0 bytes, sin expiración al 2026-10-10; cada despliegue crea uno nuevo).
+  - Definiciones de tarea `habit-tracker-habit-tracker`, revisiones 1 a 5 en `ACTIVE` al 2026-10-10 (más las que cree cada despliegue). Hay que darlas de baja (`deregister-task-definition`) y luego eliminarlas (`delete-task-definitions`). Irreversible: pedir permiso antes.
+  - Valorar añadir este borrado a `cleanup-aws.sh`.
 - [ ] Revisar Billing y Budgets al día siguiente.
 
 ### Documentación por ajustar
