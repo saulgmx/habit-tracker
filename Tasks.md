@@ -88,4 +88,8 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [ ] Actualizar README y runbook, y pasar ADR-004 a "Aceptada".
 
 ### Opcional
+- [ ] Pruebas E2E de la UI con Playwright para .NET (`Microsoft.Playwright`) en `tests/HabitTracker.Tests`, sin añadir Node. Hacerlo después del demo.
+  - Job aparte y no obligatorio en `ci.yml`, para que no bloquee el check `ci` que protege `main`.
+  - 3 o 4 pruebas de humo: cargar la lista, marcar un hábito, crear uno y comprobar que el service worker se registra.
+  - Ya se probó a mano en Brave (15 chequeos en verde, incluido offline); el script no está en el repo.
 - [ ] Azure como alternativa (ADR-006, Anexo A): requiere cuenta nueva y `deploy-azure.yml`.
