@@ -70,6 +70,10 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Confirmar que el SCP permite crear el servicio de Express Mode y los roles vinculados de ECS, ELB y Application Auto Scaling.
 - [x] Confirmar que `Cpu` 256 y `Memory` 512 son un formato válido para `AWS::ECS::ExpressGatewayService`.
 
+- [x] Probar la PWA en un iPhone real (Safari) con la URL HTTPS del servicio: se instala con Añadir a pantalla de inicio y funciona sin conexión. Cierra la HU-07.
+- [x] Comprobar con Chrome (CDP) que la app cumple los criterios de instalabilidad (`installabilityErrors` vacío).
+- [x] Borrar el servicio con `./scripts/cleanup-aws.sh service us-east-2` y comprobar que no queda servicio ECS, balanceador, target group, security group propio ni alarma. El stack base sigue intacto.
+
 ### Verificación del frontend
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
 - [x] Corregir la fecha ("9 De Octubre" a "9 de Octubre") con `::first-letter`.
@@ -77,11 +81,9 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
-- [ ] **El servicio está activo y cobrando** (Fargate y balanceador por hora, desde el crédito del plan Free). Borrarlo al terminar las pruebas: `./scripts/cleanup-aws.sh service`.
-- [ ] Probar la PWA en un móvil real con la URL HTTPS del servicio (instalación y modo offline). Cierra la HU-07.
-- [ ] Ensayar un segundo despliegue sobre el servicio existente (actualización de imagen): hoy solo se probó la creación y falta confirmar el comportamiento de `UpdateExpressGatewayService` y sus permisos.
-- [ ] Verificar que `cleanup-aws.sh service` borra el servicio sin dejar restos (balanceador, security groups, alarmas).
-- [ ] Borrar los restos del primer intento: grupo de logs `/aws/ecs/habit-tracker/habit-tracker-5c44` y revisión 1 de la definición de tarea `habit-tracker-habit-tracker`.
+- [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
+- [ ] Ensayar un segundo despliegue sobre un servicio existente (actualización de imagen): hoy solo se probó la creación y falta confirmar el comportamiento de `UpdateExpressGatewayService` y sus permisos. Requiere volver a crear el servicio (unos 6 minutos y vuelve el costo).
+- [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona: 3 grupos de logs (`/aws/ecs/habit-tracker/habit-tracker-5c44`, `-d4e5` y `-e908`) y las revisiones 1, 2 y 3 de la definición de tarea `habit-tracker-habit-tracker`. Sin costo relevante. Valorar añadir este borrado a `cleanup-aws.sh`.
 
 ### GitHub
 - [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
@@ -90,7 +92,6 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 
 ### Preparación del demo
 - [ ] Crear la rama `demo/bug-racha` con el bug intencional en `StreakCalculator`.
-- [ ] Probar la PWA instalada en un móvil real.
 - [ ] Grabar captura o video de respaldo (plan B).
 - [ ] Abrir la app 5 minutos antes del demo.
 - [ ] Actualizar `CHANGELOG.md` al cerrar cada iteración (v0.1.0, v0.2.0, v0.3.0).
