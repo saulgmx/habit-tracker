@@ -9,7 +9,9 @@
 6. `dotnet test --no-build -c Release`.
 7. Validar la infraestructura: `pip install cfn-lint` y `cfn-lint infra/aws/*.yaml`.
 
-## CD (`deploy.yml`) — al hacer merge a `main` (y a mano con `workflow_dispatch`)
+## CD (`deploy.yml`) — solo a mano (`workflow_dispatch`)
+Se ejecuta desde Actions → Deploy → Run workflow, sobre `main`. Cada despliegue crea Fargate y un balanceador que cobran por hora, por eso no se dispara con el merge. Para volver al despliegue automático, añadir de nuevo `push: branches: [main]` en `on:`.
+
 Entorno de GitHub: `production`.
 1. Checkout.
 2. Login a AWS con las llaves del usuario de despliegue (`aws-actions/configure-aws-credentials`, `secrets.AWS_ACCESS_KEY_ID` y `secrets.AWS_SECRET_ACCESS_KEY`, región `vars.AWS_REGION`).
@@ -20,10 +22,12 @@ Entorno de GitHub: `production`.
 7. Verificar `GET /health` con reintentos (el servicio puede tardar en estar listo).
 8. Publicar la URL en el resumen del job y en el deployment del entorno.
 
-> El primer merge crea el stack del servicio; los siguientes lo actualizan. La infraestructura base no se toca en cada merge: la crea `scripts/setup-aws.sh` una sola vez (ADR-005), que además guarda las variables en GitHub si `gh` está autenticado.
+> El primer despliegue crea el stack del servicio (unos 6 minutos); los siguientes lo actualizan (la actualización aún no se ha ensayado). La infraestructura base no se toca en cada despliegue: la crea `scripts/setup-aws.sh` una sola vez (ADR-005), que además guarda las variables en GitHub si `gh` está autenticado.
+>
+> Para que el despliegue funcione, el usuario de despliegue y el rol de infraestructura necesitan los permisos de `infra/aws/base.yaml` (ver ADR-005): sin ellos falla en la creación del servicio.
 
 ## Secretos y variables (Settings → Secrets and variables → Actions)
-Las llaves son de larga duración: guardarlas como secrets del entorno `production`, nunca en el repo ni en los logs.
+Las llaves son de larga duración: guardarlas como secrets del entorno `production` (no del repositorio), nunca en el repo ni en los logs. `setup-aws.sh` las guarda a nivel de repositorio; hay que rotarlas al entorno (ver runbook).
 
 | Nombre | Tipo | Uso |
 |---|---|---|
@@ -38,10 +42,11 @@ Las llaves son de larga duración: guardarlas como secrets del entorno `producti
 ## Protección de `main`
 - Requiere PR con 1 aprobación.
 - Requiere que el check `ci` esté en verde.
-- Sin pushes directos.
+- Sin pushes directos, force push ni borrado de la rama.
+- `enforce_admins` apagado: con un solo colaborador nadie puede aprobar su propio PR, así que el administrador hace el merge con *bypass* una vez que el CI está en verde. Con un segundo colaborador se puede exigir la aprobación a todos.
 
 ## Entornos
-- `production` (único), con URL visible en el deployment de GitHub. Los secrets de AWS se guardan en este entorno; conviene exigir aprobación o limitarlo a la rama `main` para que no los use otra rama.
+- `production` (único), con URL visible en el deployment de GitHub. Está limitado a la rama `main` y los secrets de AWS viven aquí, así que ninguna otra rama puede usarlos.
 
 ## Cambios del día 2 (PostgreSQL)
 - **CI:** añadir un *service container* de Postgres (por ejemplo `postgres:16`) con healthcheck y `ConnectionStrings__Default` apuntando a `localhost:5432`.
