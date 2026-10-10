@@ -50,6 +50,6 @@ Las llaves son de larga duración: guardarlas como secrets del entorno `producti
 
 ## Cambios del día 2 (PostgreSQL)
 - **CI:** añadir un *service container* de Postgres (por ejemplo `postgres:16`) con healthcheck y `ConnectionStrings__Default` apuntando a `localhost:5432`.
-- **CD:** antes de desplegar el servicio, generar un script idempotente (`dotnet ef migrations script --idempotent`) y aplicarlo a Supabase con `psql`. Desde GitHub Actions usar el pooler en modo sesión (la conexión directa puede ser solo IPv6; verificar en la documentación de Supabase).
-- **Secretos:** `SUPABASE_CONNECTION_STRING` (secret de GitHub, para migraciones) y la cadena de la app en AWS Secrets Manager o Parameter Store, referenciada desde `service.yaml`.
+- **CD:** antes de desplegar el servicio, generar un script idempotente (`dotnet ef migrations script --idempotent`) y aplicarlo a RDS con `psql`. Un runner de GitHub Actions no está dentro de la VPC: definir cómo llega a la base de datos (por ejemplo, ejecutar las migraciones al arrancar el servicio o desde una tarea de ECS dentro de la VPC) antes de abrir el acceso público. Está por decidir y verificar.
+- **Secretos:** Si las migraciones se aplican desde GitHub Actions, la cadena de conexión a RDS como secret de GitHub (permiso del dueño antes de tocar secrets) y la cadena de la app en AWS Secrets Manager o Parameter Store, referenciada desde `service.yaml`.
 - **`/health`:** que también compruebe la conexión a la base de datos.

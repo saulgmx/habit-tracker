@@ -110,11 +110,14 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
 ### Día 2: migración a PostgreSQL (ADR-004, HU-08)
-- [ ] Crear el proyecto en Supabase y obtener la cadena del pooler.
+- [ ] Confirmar en la consola («Explore AWS») que usar RDS suma el crédito adicional.
+- [ ] Crear la instancia RDS for PostgreSQL (`db.t4g.micro`, Single-AZ, `us-east-2`) con CloudFormation en `infra/aws/` y definir cómo se conecta el servicio (VPC y grupo de seguridad). Pedir permiso antes: crea recursos con costo por hora.
+- [ ] Guardar la cadena de conexión en Secrets Manager o Parameter Store.
 - [ ] Añadir `docker-compose.yml` en la raíz (referencia en `docs/05-despliegue/docker-compose.dia2.yml`).
 - [ ] Cambiar el proveedor a Npgsql y regenerar las migraciones.
 - [ ] CI: service container de Postgres.
 - [ ] CD: paso de migraciones y secretos de conexión (Secrets Manager o Parameter Store).
+- [ ] Añadir la instancia RDS a `scripts/cleanup-aws.sh` (detenerla o borrarla al terminar el demo).
 - [ ] `/health` que compruebe la base de datos.
 - [ ] Actualizar README y runbook, y pasar ADR-004 a "Aceptada".
 

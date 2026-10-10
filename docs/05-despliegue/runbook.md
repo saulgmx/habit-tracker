@@ -79,5 +79,6 @@ Si hay sospecha de filtración: desactivar la llave de inmediato (`aws iam updat
 - [ ] Revisar Billing y Budgets al día siguiente (los datos tardan en reflejarse).
 
 ## Día 2 (tras migrar a PostgreSQL)
-- [ ] Proyecto de Supabase activo (despertarlo si estaba pausado).
+- [ ] Instancia RDS en estado `available` (si estaba detenida, iniciarla; se reinicia sola a los 7 días).
+- [ ] Al terminar el demo, detener o borrar la instancia RDS: cobra por hora aunque no tenga tráfico.
 - [ ] El rollback de imagen no revierte migraciones: mantenerlas compatibles hacia atrás.
