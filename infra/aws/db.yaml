@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Habit Tracker - base de datos: Amazon RDS for PostgreSQL (instancia única, privada) con la
+  contraseña administrada por RDS en Secrets Manager. Requiere el stack base. La instancia cobra
+  por hora mientras exista: borrar con ./scripts/cleanup-aws.sh db.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: habit-tracker
+    AllowedPattern: '^[a-z][a-z0-9-]{2,30}$'
+    Description: Debe coincidir con el ProjectName del stack base.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC donde viven la base y las tareas (la VPC predeterminada). Lo rellena scripts/setup-db.sh.
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subredes de la VPC para el grupo de subredes de RDS (al menos dos zonas de disponibilidad). Lo rellena scripts/setup-db.sh.
+  InstanceClass:
+    Type: String
+    Default: db.t4g.micro
+    Description: Clase de la instancia (ADR-004).
+  EngineVersion:
+    Type: String
+    Default: '16'
+    Description: Versión de PostgreSQL. Con solo la versión mayor, RDS elige la menor predeterminada. Debe coincidir con la de docker-compose.yml.
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+    MinValue: 20
+    MaxValue: 100
+    Description: Almacenamiento en GiB (gp3; 20 es el mínimo). Acota el costo.
+  DatabaseName:
+    Type: String
+    Default: habits
+    AllowedPattern: '^[a-z][a-z0-9_]{0,62}$'
+    Description: Nombre de la base de datos que usa la API.
+  MasterUsername:
+    Type: String
+    Default: habits_admin
+    AllowedPattern: '^[a-z][a-z0-9_]{0,62}$'
+    Description: Usuario administrador. La API lo usa también (demo); la contraseña la genera y guarda RDS.
+
+Resources:
+  # Grupo que se asigna a las tareas del servicio (se suma a los que crea Express Mode).
+  # No abre ningún puerto de entrada: solo sirve de origen permitido para la base.
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Tareas de Habit Tracker con acceso a la base de datos
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL de Habit Tracker, solo desde las tareas del servicio
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref AppSecurityGroup
+          Description: PostgreSQL desde las tareas del servicio
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subredes de la base de datos de Habit Tracker
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+  # Demo: se borra sin instantánea final para no dejar cobros ni restos. Los datos se pierden
+  # al borrar el stack (la API vuelve a sembrar los de ejemplo). Para conservarlos, cambiar a Snapshot.
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      DBInstanceIdentifier: !Sub '${ProjectName}-db'
+      Engine: postgres
+      EngineVersion: !Ref EngineVersion
+      DBInstanceClass: !Ref InstanceClass
+      AllocatedStorage: !Ref AllocatedStorage
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      DBName: !Ref DatabaseName
+      MasterUsername: !Ref MasterUsername
+      ManageMasterUserPassword: true
+      DBSubnetGroupName: !Ref SubnetGroup
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      BackupRetentionPeriod: 1
+      DeleteAutomatedBackups: true
+      DeletionProtection: false
+      AutoMinorVersionUpgrade: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+  # Permite al rol de ejecución de las tareas leer solo este secreto (usuario y contraseña
+  # que ECS inyecta como variables). Vive en este stack para desaparecer junto con la base.
+  ExecutionRoleReadsSecret:
+    Type: AWS::IAM::RolePolicy
+    Properties:
+      RoleName: !Select
+        - 1
+        - !Split
+          - '/'
+          - !ImportValue
+            Fn::Sub: '${ProjectName}-base-TaskExecutionRoleArn'
+      PolicyName: read-database-secret
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ReadDatabaseSecret
+            Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: !GetAtt Database.MasterUserSecret.SecretArn
+
+Outputs:
+  DatabaseHost:
+    Description: Dirección (DNS privado) de la base de datos.
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub '${ProjectName}-db-Host'
+  DatabasePort:
+    Value: !GetAtt Database.Endpoint.Port
+    Export:
+      Name: !Sub '${ProjectName}-db-Port'
+  DatabaseName:
+    Value: !Ref DatabaseName
+    Export:
+      Name: !Sub '${ProjectName}-db-Name'
+  DatabaseSecretArn:
+    Description: Secreto de Secrets Manager con las claves username y password.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+    Export:
+      Name: !Sub '${ProjectName}-db-SecretArn'
+  AppSecurityGroupId:
+    Value: !Ref AppSecurityGroup
+    Export:
+      Name: !Sub '${ProjectName}-db-AppSecurityGroupId'
