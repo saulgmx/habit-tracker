@@ -103,7 +103,7 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
 - [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona. Decidido dejarlos por ahora (sin costo relevante):
   - 4 grupos de logs `/aws/ecs/habit-tracker/habit-tracker-` con sufijo `5c44`, `97b8`, `d4e5` y `e908`: 0 bytes almacenados y sin expiración (consultado el 2026-10-10). Cada despliegue crea uno nuevo.
-  - Definiciones de tarea `habit-tracker-habit-tracker`: `ListTaskDefinitions` ya no devuelve ninguna activa; falta comprobar con `status=INACTIVE` si quedan revisiones.
+  - Definiciones de tarea `habit-tracker-habit-tracker`: siguen las revisiones 1 a 5 en estado `ACTIVE` (consultado el 2026-10-10 con el nombre exacto de la familia; con el prefijo `habit-tracker` el listado salió vacío, no se sabe por qué). Para borrarlas hay que darlas de baja (`deregister-task-definition`, pasan a `INACTIVE`) y después eliminarlas (`delete-task-definitions`). Sin costo.
   - Valorar añadir este borrado a `cleanup-aws.sh`.
 
 ### GitHub
