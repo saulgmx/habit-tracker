@@ -1,0 +1,76 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.service.outputs.url }}
+    env:
+      STACK: habit-tracker-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login a AWS (llaves de acceso del usuario de despliegue)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login a ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir y subir la imagen
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          IMAGE="$REGISTRY/$REPOSITORY"
+          docker build -t "$IMAGE:$GITHUB_SHA" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+          echo "uri=$IMAGE:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Desplegar el servicio (CloudFormation)
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$STACK" \
+            --template-file infra/aws/service.yaml \
+            --parameter-overrides ImageUri="${{ steps.image.outputs.uri }}" \
+            --no-fail-on-empty-changeset
+
+      - name: Leer el endpoint
+        id: service
+        run: |
+          ENDPOINT="$(aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[?OutputKey=='Endpoint'].OutputValue" --output text)"
+          HOST="${ENDPOINT#https://}"
+          echo "url=https://${HOST%/}" >> "$GITHUB_OUTPUT"
+
+      - name: Verificar /health
+        env:
+          URL: ${{ steps.service.outputs.url }}
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "$URL/health"; then echo; exit 0; fi
+            echo "Intento $i/30: aún no responde"; sleep 10
+          done
+          echo "El servicio no respondió en /health"; exit 1
+
+      - name: Resumen
+        run: echo "### Desplegado en ${{ steps.service.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

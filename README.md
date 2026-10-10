@@ -14,7 +14,8 @@ Aplicación web progresiva (PWA) para crear hábitos, marcarlos cada día y ver 
 ## Cómo correrla
 
 ```bash
-dotnet ef database update --project src/HabitTracker.Api
+dotnet tool restore                                  # una vez: instala dotnet-ef (manifiesto local)
+dotnet ef database update --project src/HabitTracker.Api   # opcional: la app también migra al arrancar
 dotnet run --project src/HabitTracker.Api
 # abrir http://localhost:5000
 ```
