@@ -8,3 +8,6 @@ obj/
 .DS_Store
 TestResults/
 *.user
+
+# Prompts locales de sesión (contienen datos de la cuenta)
+prompt-*.md
