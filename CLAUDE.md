@@ -4,13 +4,13 @@ PWA para crear hábitos y ver rachas. Proyecto de demostración del SDLC y CI/CD
 Estado y pendientes en `Tasks.md`; documentación por fase del SDLC en `docs/` (ADRs en `docs/decisiones/`).
 
 ## Comandos
-- Correr: `dotnet run --project src/HabitTracker.Api` → http://localhost:5000 (migra y siembra datos al arrancar).
-- Pruebas: `dotnet test` (unitarias de rachas e integración con SQLite en memoria).
+- Correr: `docker compose up -d --wait db` y `dotnet run --project src/HabitTracker.Api` → http://localhost:5000 (migra y siembra datos al arrancar).
+- Pruebas: `docker compose up -d --wait db` y `dotnet test` (unitarias de rachas e integración con una base PostgreSQL por ejecución; el servidor sale de `TEST_POSTGRES`).
 - Antes de un PR: `dotnet format --verify-no-changes`, `dotnet build -c Release`, `dotnet test` y `cfn-lint infra/aws/*.yaml`.
-- Contenedor: `docker build -t habit-tracker .` y `docker run -p 8080:8080 habit-tracker`.
+- Contenedor: `docker compose up --build` → http://localhost:8080 (la imagen sola necesita `ConnectionStrings__Default`).
 
 ## Estructura
-- `src/HabitTracker.Api`: Minimal API (.NET 10, EF Core + SQLite). La lógica de rachas está en `Domain/StreakCalculator.cs`, pura y sin EF ni HTTP.
+- `src/HabitTracker.Api`: Minimal API (.NET 10, EF Core + PostgreSQL con Npgsql). La lógica de rachas está en `Domain/StreakCalculator.cs`, pura y sin EF ni HTTP.
 - `src/HabitTracker.Api/wwwroot`: frontend JS vanilla, manifest y service worker (solo cachea la interfaz, no la API).
 - `tests/HabitTracker.Tests`: xUnit.
 - `infra/aws`: CloudFormation. `base.yaml` (ECR, cluster, roles, usuario de despliegue) y `service.yaml` (servicio ECS Express Mode).
@@ -34,6 +34,6 @@ Estado y pendientes en `Tasks.md`; documentación por fase del SDLC en `docs/` (
 
 ## Convenciones
 - Idioma: español en documentación, mensajes de commit y textos de la UI.
-- Evitar SQL crudo y funciones propias de SQLite, para que el cambio a PostgreSQL (ADR-004, día 2) sea solo de proveedor y cadena de conexión.
+- Evitar SQL crudo y funciones propias de un proveedor de base de datos (solo se usa SQL crudo en la preparación de las pruebas).
 - Migraciones de EF Core: una por cambio de modelo (se regeneran al cambiar de proveedor).
 - CloudFormation: parámetros con descripción y valores por defecto razonables; validar con `cfn-lint`.

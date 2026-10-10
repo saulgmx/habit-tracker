@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=habits.db"));
+    o.UseNpgsql(DatabaseConfig.GetConnectionString(builder.Configuration)));
 
 var app = builder.Build();
 
@@ -20,7 +20,10 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", async (AppDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct)
+        ? Results.Ok(new { status = "ok", database = "ok" })
+        : Results.Json(new { status = "error", database = "unreachable" }, statusCode: StatusCodes.Status503ServiceUnavailable));
 
 var api = app.MapGroup("/api/habits");
 

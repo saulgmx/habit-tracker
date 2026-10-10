@@ -13,16 +13,22 @@ Aplicación web progresiva (PWA) para crear hábitos, marcarlos cada día y ver 
 
 ## Cómo correrla
 
+Necesita PostgreSQL (ADR-004). En local se levanta con Docker:
+
 ```bash
-dotnet tool restore                                  # una vez: instala dotnet-ef (manifiesto local)
-dotnet ef database update --project src/HabitTracker.Api   # opcional: la app también migra al arrancar
-dotnet run --project src/HabitTracker.Api
+docker compose up -d --wait db                       # PostgreSQL en localhost:5432 (credenciales de ejemplo)
+dotnet run --project src/HabitTracker.Api            # migra y siembra datos al arrancar
 # abrir http://localhost:5000
 ```
 
+Para correr todo en contenedores: `docker compose up --build` y abrir http://localhost:8080.
+
 ## Pruebas
 
+Las pruebas de integración usan una base PostgreSQL propia por ejecución, en el servidor de `docker compose up -d --wait db` (o el de la variable `TEST_POSTGRES`).
+
 ```bash
+docker compose up -d --wait db
 dotnet test
 ```
 
@@ -30,7 +36,7 @@ dotnet test
 
 ```bash
 docker build -t habit-tracker .
-docker run -p 8080:8080 habit-tracker
+docker run -p 8080:8080 -e ConnectionStrings__Default="Host=<servidor>;Database=habits;Username=habits;Password=<clave>" habit-tracker
 ```
 
 ## Infraestructura (AWS)
@@ -48,41 +54,3 @@ La infraestructura está definida en `infra/aws/` con CloudFormation (ver ADR-00
 ## Documentación
 
 Ver la carpeta [`docs/`](docs/) organizada por fase del SDLC.
-
----
-
-### 📄 `docker-compose.yml` (día 2)
-
-Se añade al migrar a PostgreSQL. Solo para desarrollo local (credenciales de ejemplo).
-
-```yaml
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: habits
-      POSTGRES_PASSWORD: habits
-      POSTGRES_DB: habits
-    ports:
-      - "5432:5432"
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U habits"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  api:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      ConnectionStrings__Default: "Host=db;Port=5432;Database=habits;Username=habits;Password=habits"
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  dbdata:
-```
