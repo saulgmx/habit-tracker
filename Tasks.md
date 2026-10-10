@@ -73,6 +73,7 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Probar la PWA en un iPhone real (Safari) con la URL HTTPS del servicio: se instala con Añadir a pantalla de inicio y funciona sin conexión. Cierra la HU-07.
 - [x] Comprobar con Chrome (CDP) que la app cumple los criterios de instalabilidad (`installabilityErrors` vacío).
 - [x] Borrar el servicio con `./scripts/cleanup-aws.sh service us-east-2` y comprobar que no queda servicio ECS, balanceador, target group, security group propio ni alarma. El stack base sigue intacto.
+- [x] Actualizar la documentación con lo aprendido (PR #18): runbook (sección «Si el despliegue falla», stack en `ROLLBACK_COMPLETE`, servicio ECS huérfano, rotación de llaves y limpieza), ADR-005 (política `express-extra`, permisos del usuario de despliegue, SCP de región y OIDC), ADR-002, pipeline CI/CD, costos, README, CONTRIBUTING y retrospectiva.
 
 ### Verificación del frontend
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
@@ -104,9 +105,6 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Revisar Billing y Budgets al día siguiente.
 
 ### Documentación por ajustar
-- [ ] Documentar en el runbook los permisos extra que necesita Express Mode y cómo diagnosticar un fallo (eventos del stack, `describe-services` y CloudTrail con `lookup-events`).
-- [ ] Anotar en ADR-005 que la política administrada del rol de infraestructura no basta y que se complementa con la política en línea `express-extra`.
-- [ ] Documentar que un stack en `ROLLBACK_COMPLETE` hay que borrarlo antes de reintentar y revisar si quedó un servicio ECS huérfano.
 - [ ] Actualizar `habit-tracker-sdlc-kickoff.md`: región us-east-2, restricciones del SCP y `aws configure` en lugar de `aws configure sso` (sigue diciendo us-east-1 y SSO).
 - [ ] Decidir si se versionan `habit-tracker-sdlc-kickoff.md` y `prompt-init.md` (hoy sin versionar).
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
