@@ -89,7 +89,7 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 
 ### Requiere tu confirmación (crea recursos externos o publica)
 - [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
-- [ ] Ensayar un segundo despliegue sobre un servicio existente (actualización de imagen): hoy solo se probó la creación y falta confirmar el comportamiento de `UpdateExpressGatewayService` y sus permisos. Requiere volver a crear el servicio (unos 6 minutos y vuelve el costo).
+- [ ] Ensayar un segundo despliegue sobre un servicio existente (actualización de imagen). En curso: el cuarto despliegue (creación, run `38074116647` sobre `79cd55d`) terminó en verde en 7 min 6 s y `/health`, `/api/habits`, `/`, `manifest.json` y `sw.js` dieron 200. Falta lanzar el despliegue sobre un SHA nuevo de `main` para confirmar `UpdateExpressGatewayService` y sus permisos. El servicio sigue creado y cobrando: borrarlo al terminar.
 - [ ] Borrar los restos que deja cada despliegue y que CloudFormation no gestiona: 3 grupos de logs (`/aws/ecs/habit-tracker/habit-tracker-5c44`, `-d4e5` y `-e908`) y las revisiones 1, 2 y 3 de la definición de tarea `habit-tracker-habit-tracker`. Sin costo relevante. Valorar añadir este borrado a `cleanup-aws.sh`.
 
 ### GitHub
