@@ -61,6 +61,15 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [x] Limitar el entorno `production` a la rama `main`, rotar la llave de acceso y mover los secrets al entorno (los del repositorio se borraron).
 - [x] Cambiar `deploy.yml` a solo manual (`workflow_dispatch`) para no crear recursos de pago por accidente.
 
+### Primer despliegue en AWS (2026-10-10)
+Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que faltaban y se diagnosticaron con los eventos del stack y CloudTrail.
+- [x] **Intento 1:** falló en `AWS::ECS::ExpressGatewayService`. El rol de infraestructura no tenía `ec2:DescribeAccountAttributes` y ELB devolvió `AccessDenied` al crear el balanceador. Arreglo: PR #14. Se actualizó el stack base y se limpió el servicio ECS huérfano y el stack en `ROLLBACK_COMPLETE`.
+- [x] **Intento 2:** el servicio se creó, pero CloudFormation falló al leer `Endpoint`: al usuario de despliegue le faltaba `ecs:DescribeServiceRevisions`. Arreglo: PR #15 (también `ecs:DescribeTaskDefinition` para el usuario, y `ec2:DescribeInternetGateways`, `ec2:GetSecurityGroupsForVpc`, `ecs:DescribeServices` y `ecs:UpdateService` para el rol de infraestructura).
+- [x] **Intento 3:** terminó sin errores en 6 min 29 s. Stack `habit-tracker-service` en `CREATE_COMPLETE`, 1 tarea corriendo.
+- [x] Verificar desde fuera por HTTPS: `/health` 200, `/api/habits` con los datos sembrados, y `/`, `manifest.json`, `sw.js` e íconos con 200.
+- [x] Confirmar que el SCP permite crear el servicio de Express Mode y los roles vinculados de ECS, ELB y Application Auto Scaling.
+- [x] Confirmar que `Cpu` 256 y `Memory` 512 son un formato válido para `AWS::ECS::ExpressGatewayService`.
+
 ### Verificación del frontend
 - [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
 - [x] Corregir la fecha ("9 De Octubre" a "9 de Octubre") con `::first-letter`.
@@ -68,10 +77,11 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
-- [ ] Comprobar que el SCP permita crear el servicio de ECS Express Mode y los roles vinculados de ECS y ELB (solo se sabe al crearlo).
-- [ ] Primer despliegue (merge a `main` o `workflow_dispatch`) y verificar `/health` en el móvil.
-- [ ] Ensayar la creación del servicio con tiempo: las plantillas solo pasaron `cfn-lint`.
-- [ ] Verificar `Cpu`/`Memory`, comportamiento de actualización y permisos del rol de despliegue en `AWS::ECS::ExpressGatewayService`.
+- [ ] **El servicio está activo y cobrando** (Fargate y balanceador por hora, desde el crédito del plan Free). Borrarlo al terminar las pruebas: `./scripts/cleanup-aws.sh service`.
+- [ ] Probar la PWA en un móvil real con la URL HTTPS del servicio (instalación y modo offline). Cierra la HU-07.
+- [ ] Ensayar un segundo despliegue sobre el servicio existente (actualización de imagen): hoy solo se probó la creación y falta confirmar el comportamiento de `UpdateExpressGatewayService` y sus permisos.
+- [ ] Verificar que `cleanup-aws.sh service` borra el servicio sin dejar restos (balanceador, security groups, alarmas).
+- [ ] Borrar los restos del primer intento: grupo de logs `/aws/ecs/habit-tracker/habit-tracker-5c44` y revisión 1 de la definición de tarea `habit-tracker-habit-tracker`.
 
 ### GitHub
 - [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
@@ -93,6 +103,9 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [ ] Revisar Billing y Budgets al día siguiente.
 
 ### Documentación por ajustar
+- [ ] Documentar en el runbook los permisos extra que necesita Express Mode y cómo diagnosticar un fallo (eventos del stack, `describe-services` y CloudTrail con `lookup-events`).
+- [ ] Anotar en ADR-005 que la política administrada del rol de infraestructura no basta y que se complementa con la política en línea `express-extra`.
+- [ ] Documentar que un stack en `ROLLBACK_COMPLETE` hay que borrarlo antes de reintentar y revisar si quedó un servicio ECS huérfano.
 - [ ] Actualizar `habit-tracker-sdlc-kickoff.md`: región us-east-2, restricciones del SCP y `aws configure` en lugar de `aws configure sso` (sigue diciendo us-east-1 y SSO).
 - [ ] Decidir si se versionan `habit-tracker-sdlc-kickoff.md` y `prompt-init.md` (hoy sin versionar).
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
