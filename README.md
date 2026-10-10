@@ -39,11 +39,11 @@ docker run -p 8080:8080 habit-tracker
 aws configure                                          # usuario IAM (esta cuenta no usa IAM Identity Center)
 aws sts get-caller-identity
 ./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2   # una sola vez: ECR, cluster, roles, usuario IAM y secrets de GitHub
-# El primer merge a main (o ejecutar el workflow a mano) crea el servicio.
-./scripts/cleanup-aws.sh service                    # al terminar: borrar el servicio
+# Desplegar: Actions -> Deploy -> Run workflow (solo manual; crea el servicio en unos 6 minutos).
+./scripts/cleanup-aws.sh service                    # al terminar: borrar el servicio (Fargate y balanceador cobran por hora)
 ```
 
-La infraestructura está definida en `infra/aws/` con CloudFormation (ver ADR-005). Controles de costo en `docs/05-despliegue/costos.md`.
+La infraestructura está definida en `infra/aws/` con CloudFormation (ver ADR-005). La cuenta solo permite la región `us-east-2`. Controles de costo en `docs/05-despliegue/costos.md`.
 
 ## Documentación
 
