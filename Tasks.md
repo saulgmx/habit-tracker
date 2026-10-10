@@ -42,12 +42,25 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [x] `.github/workflows/deploy.yml` (ECR + `aws cloudformation deploy` + health check).
 - [x] `scripts/seed-issues.sh` (parser de historias probado; falta ejecutarlo con `gh`).
 
+### GitHub
+- [x] Crear el repo `saulgmx/habit-tracker` y hacer push de `main`.
+- [x] Proteger `main`: PR con 1 aprobación y check `ci` en verde, sin force push ni borrado. `enforce_admins` apagado: el administrador puede saltarse la aprobación (eres el único colaborador).
+- [x] Crear el GitHub Project https://github.com/users/saulgmx/projects/1 (privado, enlazado al repo).
+- [x] Crear los labels y los issues #1 a #9 con `seed-issues.sh`, ya dentro del tablero.
+- [x] Mover las tarjetas: #1 a #6 en Done, #7 y #9 en In Progress, #8 en Todo.
+- [x] Probar el flujo de rama protegida con el PR #10 (CI en verde y merge con bypass de administrador).
+- [x] Reemplazar `<usuario>` en el badge y el ejemplo de `setup-aws.sh` del `README.md`.
+- [x] Cambiar `aws sso login` por `aws configure` en README y runbook (la cuenta usa un usuario IAM, no IAM Identity Center).
+
+### Verificación del frontend
+- [x] Probar la UI en Brave headless con vista de móvil: lista, marcar y desmarcar, crear, nombre vacío, eliminar, service worker y modo offline (15 chequeos en verde).
+- [x] Corregir la fecha ("9 De Octubre" a "9 de Octubre") con `::first-letter`.
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
-- [ ] Crear el repo en GitHub y hacer push de `main`.
 - [ ] Crear el presupuesto de $5 en AWS Budgets (alertas al 50, 90 y 100 %).
-- [ ] Ejecutar `./scripts/setup-aws.sh <usuario>/<repo>` (crea stack base, usuario IAM, llaves y secrets de GitHub).
+- [ ] Ejecutar `./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2` (crea stack base, usuario IAM, llaves y secrets de GitHub).
 - [ ] Comprobar que el SCP permita crear usuarios IAM, roles y ECS Express Mode (no verificado).
 - [ ] Crear el entorno `production` en GitHub (limitado a `main`) y mover ahí los secrets de AWS.
 - [ ] Primer despliegue (merge a `main` o `workflow_dispatch`) y verificar `/health` en el móvil.
@@ -55,9 +68,9 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [ ] Verificar `Cpu`/`Memory`, comportamiento de actualización y permisos del rol de despliegue en `AWS::ECS::ExpressGatewayService`.
 
 ### GitHub
-- [ ] Crear el GitHub Project (tablero) y ejecutar `./scripts/seed-issues.sh <usuario>/<repo> [proyecto]` (requiere `gh auth refresh -s project`).
-- [ ] Proteger `main`: PR con 1 aprobación, check `ci` en verde, sin push directo.
-- [ ] Reemplazar `<usuario>` en el badge del `README.md`.
+- [ ] Decidir qué hacer con `deploy.yml`: falla en rojo en cada push a `main` mientras no existan `AWS_REGION` ni los secrets (hacerlo solo manual con `workflow_dispatch` hasta entonces).
+- [ ] Decidir si desactivar el workflow "Auto-close issue" del proyecto (hoy cierra solos los issues al pasar a Done) para cerrarlos con `Closes #N` en los PRs.
+- [ ] Decidir si se quita la regla de aprobación o se invita a un segundo colaborador (hoy el merge exige bypass de administrador).
 
 ### Preparación del demo
 - [ ] Crear la rama `demo/bug-racha` con el bug intencional en `StreakCalculator`.
@@ -74,7 +87,7 @@ Estado del proyecto al 2026-10-09. Región de AWS: **us-east-2** (única permiti
 - [ ] Revisar Billing y Budgets al día siguiente.
 
 ### Documentación por ajustar
-- [ ] Actualizar `habit-tracker-sdlc-kickoff.md`: región us-east-2 y restricciones del SCP (sigue diciendo us-east-1).
+- [ ] Actualizar `habit-tracker-sdlc-kickoff.md`: región us-east-2, restricciones del SCP y `aws configure` en lugar de `aws configure sso` (sigue diciendo us-east-1 y SSO).
 - [ ] Decidir si se versionan `habit-tracker-sdlc-kickoff.md` y `prompt-init.md` (hoy sin versionar).
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
