@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
   Habit Tracker - servicio en ECS Express Mode (Fargate con balanceador HTTPS
-  gestionado). Requiere el stack base.
+  gestionado). Requiere el stack base y el stack de la base de datos (db.yaml).
 
 Parameters:
   ProjectName:
@@ -56,12 +56,41 @@ Resources:
       Cpu: !Ref Cpu
       Memory: !Ref Memory
       HealthCheckPath: !Ref HealthCheckPath
+      # Express Mode sigue creando sus propios grupos; este se suma y es el origen que acepta la base.
+      # Sin Subnets, usa las subredes públicas de la VPC predeterminada (la misma de la base).
+      NetworkConfiguration:
+        SecurityGroups:
+          - !ImportValue
+            Fn::Sub: '${ProjectName}-db-AppSecurityGroupId'
       PrimaryContainer:
         Image: !Ref ImageUri
         ContainerPort: !Ref ContainerPort
         Environment:
           - Name: ASPNETCORE_ENVIRONMENT
             Value: Production
+          - Name: Database__Host
+            Value: !ImportValue
+              Fn::Sub: '${ProjectName}-db-Host'
+          - Name: Database__Port
+            Value: !ImportValue
+              Fn::Sub: '${ProjectName}-db-Port'
+          - Name: Database__Name
+            Value: !ImportValue
+              Fn::Sub: '${ProjectName}-db-Name'
+        # Usuario y contraseña salen del secreto que administra RDS (clave JSON después de los dos puntos).
+        Secrets:
+          - Name: Database__User
+            ValueFrom: !Join
+              - ''
+              - - !ImportValue
+                  Fn::Sub: '${ProjectName}-db-SecretArn'
+                - ':username::'
+          - Name: Database__Password
+            ValueFrom: !Join
+              - ''
+              - - !ImportValue
+                  Fn::Sub: '${ProjectName}-db-SecretArn'
+                - ':password::'
       ScalingTarget:
         MinTaskCount: !Ref MinTaskCount
         MaxTaskCount: !Ref MaxTaskCount
