@@ -7,12 +7,13 @@
 Se necesita un entorno en AWS con CD automático desde GitHub y control de costos. Se usa una cuenta nueva con el plan Free. Los problemas con la cuenta de Azure llevaron al cambio.
 
 ## Decisión
-- Dos stacks de CloudFormation (YAML):
+- Tres stacks de CloudFormation (YAML):
   - `infra/aws/base.yaml` (una vez): repositorio ECR con política de ciclo de vida, cluster ECS, rol de ejecución, rol de infraestructura de Express Mode, y un usuario IAM de despliegue con política mínima (sin llaves en la plantilla).
-  - `infra/aws/service.yaml`: el servicio `AWS::ECS::ExpressGatewayService`, que importa los valores del stack base.
+  - `infra/aws/db.yaml` (día 2, con `scripts/setup-db.sh`): base de datos RDS for PostgreSQL privada, sus grupos de seguridad y la política que permite al rol de ejecución leer el secreto de la base (ver ADR-004). Importa valores del stack base.
+  - `infra/aws/service.yaml`: el servicio `AWS::ECS::ExpressGatewayService`, que importa los valores de los stacks base y de la base de datos.
 - `scripts/setup-aws.sh` crea el stack base y crea una llave de acceso para el usuario de despliegue y la guarda como secrets de GitHub (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) sin mostrarla, además de las variables `AWS_REGION` y `ECR_REPOSITORY`. Las llaves no se definen en CloudFormation porque `AWS::IAM::AccessKey` dejaría el secreto en las salidas del stack.
 - El CD ejecuta `aws cloudformation deploy` del stack del servicio con la imagen nueva: así la plantilla sigue siendo la fuente de verdad y no hay deriva con cambios hechos fuera de CloudFormation.
-- `scripts/cleanup-aws.sh` borra el servicio (`service`) o todo el entorno (`all`).
+- `scripts/cleanup-aws.sh` borra el servicio (`service`), el servicio y la base de datos (`db`) o todo el entorno (`all`).
 - El CI valida las plantillas con `cfn-lint`.
 
 ## Alternativas descartadas
@@ -22,7 +23,7 @@ Se necesita un entorno en AWS con CD automático desde GitHub y control de costo
 - **Crear recursos desde la consola:** no es reproducible.
 
 ## Consecuencias
-- **Verificado el 2026-10-10:** el stack base y el servicio se crearon en AWS tras tres intentos de despliegue (el tercero, sin errores, en 6 min 29 s). `Cpu` 256 y `Memory` 512 son valores válidos. Sigue sin ensayarse la actualización del servicio con una imagen nueva.
+- **Verificado el 2026-10-10:** el stack base y el servicio se crearon en AWS tras tres intentos de despliegue (el tercero, sin errores, en 6 min 29 s). `Cpu` 256 y `Memory` 512 son valores válidos. La actualización del servicio con una imagen nueva también se ensayó: pasó de `CREATE_COMPLETE` a `UPDATE_COMPLETE` en unos 10 minutos y sin permisos que faltaran. Al añadir la base de datos (grupo de seguridad propio y secretos en el servicio) tampoco hizo falta ampliar los permisos.
 - **La política administrada del rol de infraestructura no basta.** `AmazonECSInfrastructureRoleforExpressGatewayServices` no incluye `ec2:DescribeAccountAttributes`, y sin él ELB falla al crear el balanceador con `AccessDenied` ("An unknown error occurred"). Se complementa con la política en línea `express-extra` de `base.yaml` (`ec2:DescribeAccountAttributes`, `ec2:DescribeInternetGateways`, `ec2:GetSecurityGroupsForVpc`, y `ecs:DescribeServices` y `ecs:UpdateService` acotados al cluster del proyecto). Las acciones de CloudWatch de la administrada llevan una condición de etiqueta `AmazonECSManaged` y se dejaron como están.
 - **El usuario de despliegue necesita también permisos de lectura** que CloudFormation usa con sus credenciales para leer el atributo `Endpoint`: `ecs:DescribeServiceRevisions` y `ecs:DescribeTaskDefinition`. La lista oficial de permisos del recurso se obtiene con `aws cloudformation describe-type --type RESOURCE --type-name AWS::ECS::ExpressGatewayService` (sección `handlers`).
 - **Un fallo de permisos en el rol de infraestructura es engañoso:** CloudFormation muestra `No rollback candidate was found to run the rollback`, y el servicio de ECS puede quedar huérfano aunque el stack se revierta. La causa real está en el deployment del servicio (`aws ecs describe-services`) y en CloudTrail.

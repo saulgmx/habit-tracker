@@ -45,8 +45,9 @@ docker run -p 8080:8080 -e ConnectionStrings__Default="Host=<servidor>;Database=
 aws configure                                          # usuario IAM (esta cuenta no usa IAM Identity Center)
 aws sts get-caller-identity
 ./scripts/setup-aws.sh saulgmx/habit-tracker us-east-2   # una sola vez: ECR, cluster, roles, usuario IAM y secrets de GitHub
-# Desplegar: Actions -> Deploy -> Run workflow (solo manual; crea el servicio en unos 6 minutos).
-./scripts/cleanup-aws.sh service                    # al terminar: borrar el servicio (Fargate y balanceador cobran por hora)
+./scripts/setup-db.sh us-east-2                          # base de datos RDS PostgreSQL (menos de 10 min; cobra por hora)
+# Desplegar: Actions -> Deploy -> Run workflow (solo manual; requiere la base; crea el servicio en unos 6 minutos).
+./scripts/cleanup-aws.sh db                              # al terminar: borrar servicio y base (cobran por hora; los datos se pierden)
 ```
 
 La infraestructura está definida en `infra/aws/` con CloudFormation (ver ADR-005). La cuenta solo permite la región `us-east-2`. Controles de costo en `docs/05-despliegue/costos.md`.

@@ -7,7 +7,7 @@
 Demo de un día para público poco técnico, con foco en CI/CD. El responsable domina .NET.
 
 ## Decisión
-Backend con ASP.NET Core Minimal API y SQLite en el día 1 (migración a PostgreSQL planeada en ADR-004); frontend en JavaScript vanilla servido desde la misma API.
+Backend con ASP.NET Core Minimal API y SQLite en el día 1 (reemplazado por PostgreSQL en el día 2, ver ADR-004); frontend en JavaScript vanilla servido desde la misma API.
 
 ## Alternativas descartadas
 - **React/Vue + build:** añade herramientas y ruido al pipeline.

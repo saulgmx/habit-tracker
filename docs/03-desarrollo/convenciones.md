@@ -10,8 +10,8 @@
 - C#: `dotnet format` y analizadores por defecto.
 - La lógica de negocio vive en clases puras, sin dependencias de EF ni HTTP.
 - JS: módulos ES, sin librerías externas.
-- Migraciones: una por cambio de modelo, con nombre descriptivo y revisadas en el PR (se regeneran al migrar a PostgreSQL).
-- Evitar SQL crudo y funciones específicas de SQLite para facilitar la migración del día 2.
+- Migraciones: una por cambio de modelo, con nombre descriptivo y revisadas en el PR. Como se aplican al arrancar la API, deben ser compatibles hacia atrás.
+- Evitar SQL crudo y funciones propias de un proveedor de base de datos (solo se usa SQL crudo en la preparación de las pruebas).
 - Secretos: nunca en el repo; usar variables de entorno.
 - CloudFormation: parámetros con descripción y valores por defecto razonables; validar con `cfn-lint` antes del PR.
 

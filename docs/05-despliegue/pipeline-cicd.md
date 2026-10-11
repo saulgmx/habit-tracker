@@ -22,7 +22,7 @@ Entorno de GitHub: `production`.
 7. Verificar `GET /health` con reintentos (el servicio puede tardar en estar listo).
 8. Publicar la URL en el resumen del job y en el deployment del entorno.
 
-> El primer despliegue crea el stack del servicio (unos 6 minutos); los siguientes lo actualizan (la actualización aún no se ha ensayado). La infraestructura base no se toca en cada despliegue: la crea `scripts/setup-aws.sh` una sola vez (ADR-005), que además guarda las variables en GitHub si `gh` está autenticado.
+> El primer despliegue crea el stack del servicio (unos 6 minutos); los siguientes lo actualizan (la actualización se ensayó: unos 10 minutos y sin errores). Una actualización solo cambia algo si la imagen es nueva: la etiqueta es el SHA del commit, y con el mismo commit el conjunto de cambios queda vacío. La infraestructura base no se toca en cada despliegue: la crea `scripts/setup-aws.sh` una sola vez (ADR-005), que además guarda las variables en GitHub si `gh` está autenticado.
 >
 > Para que el despliegue funcione, el usuario de despliegue y el rol de infraestructura necesitan los permisos de `infra/aws/base.yaml` (ver ADR-005): sin ellos falla en la creación del servicio.
 
@@ -48,8 +48,9 @@ Las llaves son de larga duración: guardarlas como secrets del entorno `producti
 ## Entornos
 - `production` (único), con URL visible en el deployment de GitHub. Está limitado a la rama `main` y los secrets de AWS viven aquí, así que ninguna otra rama puede usarlos.
 
-## Cambios del día 2 (PostgreSQL)
-- **CI:** añadir un *service container* de Postgres (por ejemplo `postgres:16`) con healthcheck y `ConnectionStrings__Default` apuntando a `localhost:5432`.
-- **CD:** antes de desplegar el servicio, generar un script idempotente (`dotnet ef migrations script --idempotent`) y aplicarlo a RDS con `psql`. Un runner de GitHub Actions no está dentro de la VPC: definir cómo llega a la base de datos (por ejemplo, ejecutar las migraciones al arrancar el servicio o desde una tarea de ECS dentro de la VPC) antes de abrir el acceso público. Está por decidir y verificar.
-- **Secretos:** Si las migraciones se aplican desde GitHub Actions, la cadena de conexión a RDS como secret de GitHub (permiso del dueño antes de tocar secrets) y la cadena de la app en AWS Secrets Manager o Parameter Store, referenciada desde `service.yaml`.
-- **`/health`:** que también compruebe la conexión a la base de datos.
+## PostgreSQL (día 2)
+- **CI:** el job `ci` levanta un *service container* `postgres:16` con healthcheck y define `TEST_POSTGRES` apuntando a `localhost:5432`. Cada ejecución de pruebas crea y borra su propia base en ese servidor.
+- **CD:** no hay paso de migraciones. La API aplica las migraciones al arrancar (`Migrate()`) porque RDS es privada y un runner de GitHub Actions no está dentro de la VPC (ver ADR-004).
+- **Requisito:** el stack `habit-tracker-db` debe existir antes de desplegar (`./scripts/setup-db.sh`): el servicio importa su host, secreto y grupo de seguridad, y `deploy.yml` falla en el paso «Desplegar el servicio» si no están.
+- **Secretos:** no hay secretos de base de datos en GitHub. RDS administra la contraseña en Secrets Manager y ECS la inyecta en la tarea (`Database__User` y `Database__Password`).
+- **`/health`:** comprueba la conexión a la base de datos y responde 503 si no responde.

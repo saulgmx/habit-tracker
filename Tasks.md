@@ -97,10 +97,25 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [x] Decidir que el kickoff **no se versiona** (queda solo local, como dice `CLAUDE.md`; `prompt-*.md` entra en la misma regla).
 - [x] ADR-005: quitar la referencia a «la sección de riesgos del kickoff» y apuntar a `pipeline-cicd.md` y al runbook, que sí están en el repo.
 
+### Día 2: migración a PostgreSQL (ADR-004, HU-08), 2026-10-10
+Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en este PR. HU-08 cumplida.
+- [x] Proveedor Npgsql y migración `InitialCreate` regenerada; `docker-compose.yml` con `db` y `api`; CI con service container de Postgres y 28 pruebas contra Postgres real (PR #28).
+- [x] `/health` que comprueba la base de datos (200, o 503 si no responde).
+- [x] Cadena de conexión por partes (`Database__Host`, etc.) y cifrado GSS desactivado en Npgsql (quita el aviso de `libgssapi_krb5`); puerto local 5050 porque el 5000 lo ocupa AirPlay en macOS; mensaje claro con reintento si la API no responde (en vez de «Failed to fetch»).
+- [x] Plantillas: `infra/aws/db.yaml` (RDS PostgreSQL 16, `db.t4g.micro`, 20 GiB gp3 cifrado, privada, contraseña administrada por RDS en Secrets Manager), `service.yaml` con grupo de seguridad adicional y secretos, `scripts/setup-db.sh` y modo `db` en `cleanup-aws.sh` (PR #29).
+- [x] Crear la base con `setup-db.sh`: sin errores y en menos de 10 minutos; el SCP no la bloqueó. RDS creó solo el rol vinculado `AWSServiceRoleForRDS`.
+- [x] Desplegar contra RDS (run `38091875241`, 6 min 19 s): `/health` con `"database":"ok"`, `/api/habits` con los datos sembrados, `/`, `manifest.json` y `sw.js` con 200. Sin permisos faltantes.
+- [x] Persistencia: un hábito marcador sobrevivió, con su check-in, a un redespliegue de 10 min que reemplazó la tarea (`:6` a `:7`, imagen `fc10a5a` a `d571d2d`); el seed no se duplicó.
+- [x] Medir el retraso al marcar un hábito: es de red (~60 ms por viaje, 1 a 5 ms de procesamiento) y viene de las dos peticiones seguidas (marcar y recargar la lista) sin actualizar la pantalla hasta recibir ambas.
+- [x] Borrar servicio y base con `./scripts/cleanup-aws.sh db us-east-2` y comprobar en solo lectura: queda solo `habit-tracker-base`, sin instancias RDS, secretos, servicios, tareas, balanceadores, target groups ni security groups del proyecto. Quedan 5 grupos de logs y 7 revisiones de la definición de tarea (decidido dejarlos hasta el final del demo).
+- [x] Documentación: ADR-004 a «Aceptada», ADR-001, ADR-002 y ADR-005, arquitectura, modelo de datos, convenciones, plan de pruebas, historias de usuario (HU-08), pipeline, costos, runbook y README.
+- [x] Crédito adicional: se aplicaron 20 USD por usar RDS y 20 USD por usar AWS Budgets (confirmado por el dueño en la consola). El plan Free queda con 139.94 USD de crédito (antes 100) hasta el 2027-04-09.
+- No verificado: gasto real en Billing, cargo del secreto de Secrets Manager, TLS en la conexión a RDS y arranque simultáneo de dos tareas con `Migrate()` (detalle en ADR-004, «Por verificar»).
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
-- [ ] El servicio está borrado (no hay costo de Fargate ni balanceador). Cada nuevo despliegue lo recrea y vuelve a cobrar por hora: borrarlo con `./scripts/cleanup-aws.sh service` al terminar.
+- [ ] El servicio y la base de datos están borrados (no hay costo de Fargate, balanceador ni RDS). Cada nuevo despliegue necesita `./scripts/setup-db.sh` y un Deploy, y vuelve a cobrar por hora: borrarlos con `./scripts/cleanup-aws.sh db` al terminar.
 
 ### GitHub
 - [ ] Volver a activar el despliegue automático en `deploy.yml` (hoy solo manual con `workflow_dispatch`) cuando el entorno esté ensayado.
@@ -114,7 +129,7 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 - [ ] Completar `docs/06-mantenimiento/retrospectiva.md` tras el demo.
 
 ### Después del demo
-- [ ] `./scripts/cleanup-aws.sh service` (detiene Fargate y el balanceador).
+- [ ] `./scripts/cleanup-aws.sh db` (detiene Fargate y el balanceador y borra la base de datos) si siguen creados.
 - [ ] `./scripts/cleanup-aws.sh all` si ya no se necesita, y borrar los secrets de AWS en GitHub.
 - [ ] Revisar en la consola que no queden balanceadores, servicios ECS, grupos de logs ni imágenes.
 - [ ] Borrar los restos de los despliegues que CloudFormation no gestiona. Decidido (2026-10-10): se dejan hasta terminar el demo y se borran entonces, juntos; sin costo relevante.
@@ -126,21 +141,9 @@ Tres intentos de `deploy.yml` a mano; los dos primeros fallaron por permisos que
 ### Documentación por ajustar
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
-### Día 2: migración a PostgreSQL (ADR-004, HU-08)
-Fases A y B integradas (PR #28 y #29). Fase C en curso (2026-10-10): la base y el servicio están **creados y cobrando por hora** (~0.06 USD/h, estimación); al terminar, `./scripts/cleanup-aws.sh db`.
-- [ ] Confirmar en la consola («Explore AWS») que usar RDS suma el crédito adicional.
-- [x] Crear la instancia RDS for PostgreSQL con CloudFormation (`infra/aws/db.yaml`, `./scripts/setup-db.sh`): PostgreSQL 16.13, `db.t4g.micro`, Single-AZ, 20 GiB gp3 cifrado, privada, el 5432 solo desde el grupo de seguridad de las tareas. Creada sin errores; el SCP no la bloqueó.
-- [x] Conectar el servicio: Express Mode acepta un grupo de seguridad propio como adicional (`NetworkConfiguration`), y la tarea lo recibe junto al suyo.
-- [x] Guardar las credenciales: RDS administra la contraseña en Secrets Manager (`ManageMasterUserPassword`) y la tarea recibe `Database__User` y `Database__Password` como secretos de ECS; el host, puerto y nombre van como variables.
-- [x] `docker-compose.yml` en la raíz, con `db` y `api` (PR #28).
-- [x] Proveedor Npgsql y migración `InitialCreate` regenerada (PR #28).
-- [x] CI: service container de Postgres; 28 pruebas contra Postgres real (PR #28).
-- [x] Migraciones: se aplican con `Migrate()` al arrancar la API, no como paso aparte del CD (RDS es privada y GitHub Actions no llega a ella). Verificado en el despliegue contra RDS.
-- [x] Añadir la base a `scripts/cleanup-aws.sh` (modo `db`; `service` avisa de que la base sigue cobrando).
-- [x] `/health` que compruebe la base de datos (200, o 503 si no responde).
-- [x] Primer despliegue contra RDS (run `38091875241`, verde en 6 min 19 s, sin permisos faltantes): `/health` con `"database":"ok"`, `/api/habits` con los datos sembrados y `/`, `manifest.json` y `sw.js` con 200.
-- [ ] Probar que los datos sobreviven a un redespliegue: hábito marcador «Persistencia RDS» (id 5, con check-in de hoy) creado antes de redesplegar sobre la tarea `14e289d7`, definición `:6`, imagen `fc10a5a`. Falta redesplegar con un SHA nuevo y comprobar que sigue ahí.
-- [ ] Actualizar README, runbook, costos y pipeline, y pasar ADR-004 a "Aceptada" (fase D).
+### Día 2: pendientes
+- [ ] Mejora de la UI al marcar un hábito: actualización optimista (la pantalla cambia al instante y se confirma en segundo plano, revirtiendo si falla) y, opcionalmente, que `PUT`/`DELETE` devuelvan el hábito actualizado para evitar la segunda petición. Se puede hacer y probar en local, sin AWS. Aprobada para más adelante.
+- [ ] Un usuario de aplicación con menos privilegios que el administrador de RDS (hoy la API usa el administrador; suficiente para el demo).
 
 ### Opcional
 - [ ] Pasar el servicio a ARM64 (Graviton) en Express Mode: hasta 40 % mejor relación precio-rendimiento según AWS. Hoy se usa x86_64 (valor por defecto) y el ahorro con 0.25 vCPU y 0.5 GiB sería de centavos.

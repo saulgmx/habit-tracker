@@ -48,10 +48,10 @@
 
 ### HU-08 Migrar la base de datos a PostgreSQL
 **Como** equipo **quiero** migrar de SQLite a PostgreSQL **para** conservar los datos entre despliegues.
-- [ ] La API arranca contra Postgres local con `docker compose`.
-- [ ] Las pruebas pasan en CI con un service container de Postgres.
-- [ ] El CD aplica las migraciones y despliega.
-- [ ] Los datos sobreviven a un redespliegue.
+- [x] La API arranca contra Postgres local con `docker compose`.
+- [x] Las pruebas pasan en CI con un service container de Postgres.
+- [x] El despliegue aplica las migraciones (la API las ejecuta al arrancar) contra RDS y despliega.
+- [x] Los datos sobreviven a un redespliegue.
 
 ## Épica 6: Infraestructura
 
