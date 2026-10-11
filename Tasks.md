@@ -117,7 +117,7 @@ Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en 
 - [x] API: `PUT` y `DELETE` de check-ins devuelven el hábito actualizado (`200`) y aceptan `?today=`; un `PUT` simultáneo del mismo día no falla ni duplica. 4 pruebas nuevas y 3 ajustadas (32 en total, contra Postgres real), `docs/02-diseno/api.md` actualizado.
 - [x] Interfaz: estado en memoria; al tocar, la casilla, el punto de hoy y la racha cambian al instante (la racha actual sube o baja 1; la máxima solo sube hasta que el servidor confirme). Las peticiones salen en orden por hábito y al terminar la última se usa la respuesta del servidor, sin recargar la lista. Si falla, se revierte y el error sigue visible. El botón conserva el foco.
 - [x] Verificado en Brave: 13 comprobaciones con un servidor de prueba (latencia de 1.5 s, fallo 500, tres toques seguidos con peticiones en orden y nunca dos a la vez, foco) y una prueba de humo con la API real y Postgres. Esos guiones no están en el repo; la tarea opcional de Playwright los reemplazaría.
-- No verificado: el efecto sobre la latencia percibida en un móvil real contra AWS (se probó contra un servidor con latencia simulada y en local).
+- [x] Probado en un iPhone real contra AWS (servicio y base recreados con `setup-db.sh` y un Deploy sobre `9135813`; run `38100356701`, 6 min 33 s): el dueño del proyecto confirmó que se ve bien. Desde el equipo de pruebas, un `PUT` con conexión nueva tardó de 180 a 264 ms (6 medidas), igual que antes: la mejora es que la pantalla ya no espera esa respuesta. No se midió la latencia percibida en el móvil, solo la impresión del dueño. Servicio y base borrados después con `cleanup-aws.sh db`.
 
 ## Pendiente
 
