@@ -84,7 +84,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var habit = await CreateAsync("Leer");
         foreach (var date in new[] { "2026-10-07", "2026-10-08", "2026-10-09" })
-            Assert.Equal(HttpStatusCode.NoContent, (await _client.PutAsync($"/api/habits/{habit.Id}/checkins/{date}", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await _client.PutAsync($"/api/habits/{habit.Id}/checkins/{date}", null)).StatusCode);
 
         var view = await GetAsync(habit.Id, "2026-10-09");
         Assert.Equal(3, view.CurrentStreak);
@@ -93,21 +93,68 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Marcar_DevuelveElHabitoActualizado()
+    {
+        var habit = await CreateAsync("Meditar");
+        await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-08?today=2026-10-09", null);
+
+        var response = await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09?today=2026-10-09", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var view = (await response.Content.ReadFromJsonAsync<HabitView>())!;
+        Assert.Equal(habit.Id, view.Id);
+        Assert.Equal("Meditar", view.Name);
+        Assert.Equal(2, view.CurrentStreak);
+        Assert.Equal(2, view.BestStreak);
+        Assert.Equal([false, false, false, false, false, true, true], view.Last7Days);
+    }
+
+    [Fact]
     public async Task Marcar_DosVeces_NoDuplica()
     {
         var habit = await CreateAsync("Agua");
         await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09", null);
-        await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09", null);
+        var second = await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09?today=2026-10-09", null);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.Equal(1, (await second.Content.ReadFromJsonAsync<HabitView>())!.CurrentStreak);
         Assert.Equal(1, (await GetAsync(habit.Id, "2026-10-09")).CurrentStreak);
     }
 
     [Fact]
-    public async Task Desmarcar_QuitaElDia()
+    public async Task Marcar_Simultaneo_NoDuplicaNiFalla()
+    {
+        var habit = await CreateAsync("Carrera");
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 10)
+            .Select(_ => _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09", null)));
+
+        Assert.All(responses, r => Assert.Equal(HttpStatusCode.OK, r.StatusCode));
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Equal(1, await db.CheckIns.CountAsync(c => c.HabitId == habit.Id));
+    }
+
+    [Fact]
+    public async Task Desmarcar_QuitaElDia_YDevuelveElHabito()
     {
         var habit = await CreateAsync("Correr");
         await _client.PutAsync($"/api/habits/{habit.Id}/checkins/2026-10-09", null);
-        await _client.DeleteAsync($"/api/habits/{habit.Id}/checkins/2026-10-09");
+
+        var response = await _client.DeleteAsync($"/api/habits/{habit.Id}/checkins/2026-10-09?today=2026-10-09");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var view = (await response.Content.ReadFromJsonAsync<HabitView>())!;
+        Assert.Equal(0, view.CurrentStreak);
+        Assert.Equal(0, view.BestStreak);
         Assert.Equal(0, (await GetAsync(habit.Id, "2026-10-09")).CurrentStreak);
+    }
+
+    [Fact]
+    public async Task Desmarcar_DiaSinMarcar_NoFalla()
+    {
+        var habit = await CreateAsync("Estirar");
+        var response = await _client.DeleteAsync($"/api/habits/{habit.Id}/checkins/2026-10-09");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -116,6 +163,13 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var habit = await CreateAsync("Yoga");
         var response = await _client.PutAsync($"/api/habits/{habit.Id}/checkins/no-es-fecha", null);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Desmarcar_HabitoInexistente_Devuelve404()
+    {
+        var response = await _client.DeleteAsync("/api/habits/9999/checkins/2026-10-09");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

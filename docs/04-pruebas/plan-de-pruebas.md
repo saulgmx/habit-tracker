@@ -6,6 +6,7 @@
 | Unitarias | xUnit | `StreakCalculator` |
 | Integración | `WebApplicationFactory` | Endpoints contra PostgreSQL real, con una base propia por ejecución (`docker compose up -d --wait db` en local; service container en CI) |
 | Manual | Móvil real | Instalación PWA, uso táctil |
+| Manual en navegador | Brave o Chrome | Marcar un hábito con la red lenta o fallando (HU-10): el cambio es inmediato, se revierte con error si el servidor falla y los toques seguidos salen en orden. Hoy es una prueba manual; automatizarla es la tarea opcional de Playwright |
 
 ## Casos de la racha (unitarias)
 | # | Escenario | Resultado esperado |
