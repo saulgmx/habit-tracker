@@ -5,6 +5,7 @@ Cuenta nueva de AWS con el plan Free. Según la documentación del plan, da cré
 ## Estado verificado (2026-10-10)
 - El plan Free de la cuenta estaba activo con $100 de crédito restante y vencimiento el 2027-04-09.
 - El presupuesto `habit-tracker-5usd` ($5 al mes, alertas al 50, 90 y 100 %) está creado.
+- Se aplicaron 20 USD de crédito por usar RDS y otros 20 USD por usar AWS Budgets (confirmado por el dueño en la consola, «Explore AWS»). Según la API de AWS, quedan 139.94 USD de crédito (antes 100 USD), con vencimiento el 2027-04-09.
 - El servicio y la base de datos se desplegaron y se borraron tras las pruebas; existieron el tiempo que duró cada prueba. No se ha verificado el costo real: revisar Billing.
 - Precios de lista de RDS en `us-east-2` (API de precios de AWS, 2026-10-10): 0.016 USD por hora la instancia `db.t4g.micro` Single-AZ y 0.115 USD por GB-mes el almacenamiento gp3. Con 20 GiB son unos 2.30 USD al mes, y la base completa cuesta del orden de 0.02 USD por hora (unos 0.5 USD al día) aunque no tenga tráfico. Son precios de lista, no el gasto real.
 

@@ -109,7 +109,8 @@ Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en 
 - [x] Medir el retraso al marcar un hábito: es de red (~60 ms por viaje, 1 a 5 ms de procesamiento) y viene de las dos peticiones seguidas (marcar y recargar la lista) sin actualizar la pantalla hasta recibir ambas.
 - [x] Borrar servicio y base con `./scripts/cleanup-aws.sh db us-east-2` y comprobar en solo lectura: queda solo `habit-tracker-base`, sin instancias RDS, secretos, servicios, tareas, balanceadores, target groups ni security groups del proyecto. Quedan 5 grupos de logs y 7 revisiones de la definición de tarea (decidido dejarlos hasta el final del demo).
 - [x] Documentación: ADR-004 a «Aceptada», ADR-001, ADR-002 y ADR-005, arquitectura, modelo de datos, convenciones, plan de pruebas, historias de usuario (HU-08), pipeline, costos, runbook y README.
-- No verificado: crédito adicional de «Explore AWS», gasto real en Billing, cargo del secreto de Secrets Manager, TLS en la conexión a RDS y arranque simultáneo de dos tareas con `Migrate()` (detalle en ADR-004, «Por verificar»).
+- [x] Crédito adicional: se aplicaron 20 USD por usar RDS y 20 USD por usar AWS Budgets (confirmado por el dueño en la consola). El plan Free queda con 139.94 USD de crédito (antes 100) hasta el 2027-04-09.
+- No verificado: gasto real en Billing, cargo del secreto de Secrets Manager, TLS en la conexión a RDS y arranque simultáneo de dos tareas con `Migrate()` (detalle en ADR-004, «Por verificar»).
 
 ## Pendiente
 
@@ -141,7 +142,6 @@ Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en 
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
 ### Día 2: pendientes
-- [ ] Confirmar en la consola («Explore AWS») que usar RDS suma el crédito adicional.
 - [ ] Mejora de la UI al marcar un hábito: actualización optimista (la pantalla cambia al instante y se confirma en segundo plano, revirtiendo si falla) y, opcionalmente, que `PUT`/`DELETE` devuelvan el hábito actualizado para evitar la segunda petición. Se puede hacer y probar en local, sin AWS. Aprobada para más adelante.
 - [ ] Un usuario de aplicación con menos privilegios que el administrador de RDS (hoy la API usa el administrador; suficiente para el demo).
 
