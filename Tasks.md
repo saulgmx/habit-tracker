@@ -112,6 +112,13 @@ Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en 
 - [x] Crédito adicional: se aplicaron 20 USD por usar RDS y 20 USD por usar AWS Budgets (confirmado por el dueño en la consola). El plan Free queda con 139.94 USD de crédito (antes 100) hasta el 2027-04-09.
 - No verificado: gasto real en Billing, cargo del secreto de Secrets Manager, TLS en la conexión a RDS y arranque simultáneo de dos tareas con `Migrate()` (detalle en ADR-004, «Por verificar»).
 
+### Marcar un hábito responde al instante (HU-10, issue #32), 2026-10-10
+- [x] Documentar la HU-10 en `docs/01-requisitos/historias-usuario.md`.
+- [x] API: `PUT` y `DELETE` de check-ins devuelven el hábito actualizado (`200`) y aceptan `?today=`; un `PUT` simultáneo del mismo día no falla ni duplica. 4 pruebas nuevas y 3 ajustadas (32 en total, contra Postgres real), `docs/02-diseno/api.md` actualizado.
+- [x] Interfaz: estado en memoria; al tocar, la casilla, el punto de hoy y la racha cambian al instante (la racha actual sube o baja 1; la máxima solo sube hasta que el servidor confirme). Las peticiones salen en orden por hábito y al terminar la última se usa la respuesta del servidor, sin recargar la lista. Si falla, se revierte y el error sigue visible. El botón conserva el foco.
+- [x] Verificado en Brave: 13 comprobaciones con un servidor de prueba (latencia de 1.5 s, fallo 500, tres toques seguidos con peticiones en orden y nunca dos a la vez, foco) y una prueba de humo con la API real y Postgres. Esos guiones no están en el repo; la tarea opcional de Playwright los reemplazaría.
+- No verificado: el efecto sobre la latencia percibida en un móvil real contra AWS (se probó contra un servidor con latencia simulada y en local).
+
 ## Pendiente
 
 ### Requiere tu confirmación (crea recursos externos o publica)
@@ -142,7 +149,6 @@ Fases A y B en PR #28 y #29, fase C probada en AWS y fase D (documentación) en 
 - [ ] Pendientes de la sección 11 del kickoff: nombre definitivo de la app y del repo, hábitos de ejemplo definitivos.
 
 ### Día 2: pendientes
-- [ ] Mejora de la UI al marcar un hábito: actualización optimista (la pantalla cambia al instante y se confirma en segundo plano, revirtiendo si falla) y, opcionalmente, que `PUT`/`DELETE` devuelvan el hábito actualizado para evitar la segunda petición. Se puede hacer y probar en local, sin AWS. Aprobada para más adelante.
 - [ ] Un usuario de aplicación con menos privilegios que el administrador de RDS (hoy la API usa el administrador; suficiente para el demo).
 
 ### Opcional

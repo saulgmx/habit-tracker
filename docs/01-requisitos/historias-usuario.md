@@ -24,11 +24,11 @@
 
 ### HU-10 Marcar un hábito responde al instante
 **Como** persona que usa la app **quiero** que al marcar o desmarcar un hábito la pantalla cambie al instante **para** que se sienta fluida aunque la conexión con el servidor tenga latencia.
-- [ ] Al tocar un hábito, la casilla y la racha se actualizan sin esperar al servidor.
-- [ ] La petición se confirma en segundo plano; si falla, se revierte el cambio y se muestra el mensaje de error.
-- [ ] No se pierde ni se duplica un check-in si se toca varias veces seguidas.
-- [ ] `PUT` y `DELETE` de `/api/habits/{id}/checkins/{date}` devuelven el hábito actualizado, para evitar recargar la lista.
-- [ ] Hay pruebas que cubren el cambio (la API; la interfaz se prueba a mano o en un navegador).
+- [x] Al tocar un hábito, la casilla y la racha se actualizan sin esperar al servidor.
+- [x] La petición se confirma en segundo plano; si falla, se revierte el cambio y se muestra el mensaje de error.
+- [x] No se pierde ni se duplica un check-in si se toca varias veces seguidas.
+- [x] `PUT` y `DELETE` de `/api/habits/{id}/checkins/{date}` devuelven el hábito actualizado, para evitar recargar la lista.
+- [x] Hay pruebas que cubren el cambio (la API; la interfaz se prueba a mano o en un navegador).
 
 ## Épica 3: Rachas
 
