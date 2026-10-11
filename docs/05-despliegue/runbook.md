@@ -84,7 +84,7 @@ Si hay sospecha de filtración: desactivar la llave de inmediato (`aws iam updat
 - [ ] `./scripts/cleanup-aws.sh db` para detener el cómputo y el balanceador **y borrar la base de datos** (los datos se pierden; sin instantánea). `./scripts/cleanup-aws.sh service` borra solo el servicio y deja la base cobrando.
 - [ ] Rotar o borrar las llaves de acceso si ya no se usan.
 - [ ] Si ya no se necesita: `./scripts/cleanup-aws.sh all` (borra también las llaves y el usuario) y eliminar los secrets de AWS en GitHub.
-- [ ] Revisar en la consola que no queden balanceadores, instancias RDS, secretos, servicios ECS, target groups, security groups ni alarmas. Los grupos de logs (`/aws/ecs/habit-tracker/…`, uno por despliegue) y las revisiones de la definición de tarea no se borran con el stack: eliminarlos a mano (`aws logs delete-log-group`, `aws ecs deregister-task-definition`).
+- [ ] Revisar en la consola que no queden balanceadores, instancias RDS, instantáneas de RDS, secretos, servicios ECS, target groups, security groups ni alarmas. La instantánea automática inicial de la base (`aws rds describe-db-snapshots`) puede tardar varios minutos en desaparecer después de borrar el stack: en una prueba seguía ahí unos 15 minutos después de que la instancia dejara de existir y se eliminó sola; si persiste mucho más, borrarla a mano. Los grupos de logs (`/aws/ecs/habit-tracker/…`, uno por despliegue) y las revisiones de la definición de tarea no se borran con el stack: eliminarlos a mano (`aws logs delete-log-group`, `aws ecs deregister-task-definition`).
 - [ ] Revisar Billing y Budgets al día siguiente (los datos tardan en reflejarse).
 
 ## Base de datos (PostgreSQL en RDS)
