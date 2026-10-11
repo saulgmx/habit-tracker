@@ -4,7 +4,7 @@
 | Nivel | Herramienta | Qué cubre |
 |---|---|---|
 | Unitarias | xUnit | `StreakCalculator` |
-| Integración | `WebApplicationFactory` | Endpoints con SQLite en memoria (en el día 2, contra Postgres real) |
+| Integración | `WebApplicationFactory` | Endpoints contra PostgreSQL real, con una base propia por ejecución (`docker compose up -d --wait db` en local; service container en CI) |
 | Manual | Móvil real | Instalación PWA, uso táctil |
 
 ## Casos de la racha (unitarias)

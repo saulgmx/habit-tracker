@@ -18,6 +18,6 @@ Dockerfile multi-stage, imagen en Amazon ECR y despliegue en Amazon ECS Express 
 ## Consecuencias
 - No hay escalado a cero (no encontré soporte en Express Mode): el servicio y su balanceador cobran por hora hasta borrarlos.
 - La infraestructura se define como código con CloudFormation (ver ADR-005) y los costos se controlan según `docs/05-despliegue/costos.md`.
-- SQLite pierde los datos al redesplegar: usar seed al arrancar. La migración a PostgreSQL (ADR-004) elimina esta limitación.
+- SQLite perdía los datos al redesplegar. Con PostgreSQL en RDS (ADR-004) los datos sobreviven; el seed al arrancar solo carga los datos de ejemplo cuando la base está vacía.
 - **Verificado:** ECS Express Mode está disponible y funciona en `us-east-2`, que es la única región permitida por los SCP de la cuenta (ver ADR-005). El servicio se desplegó con crédito del plan Free; no hay una cifra de costo verificada.
 - **Arquitectura x86_64:** es el valor por defecto de Express Mode y coincide con la imagen que construye el CI (`ubuntu-latest`). ARM64 (Graviton) ya existe en la CLI de ECS (`--cpu-architecture`), pero `AWS::ECS::ExpressGatewayService` en CloudFormation no tenía la propiedad `CpuArchitecture` el 2026-10-09; se deja como mejora opcional (ver `Tasks.md`). Si se activa, la imagen debe construirse también para `linux/arm64`, o el contenedor falla al arrancar con *exec format error*.
